@@ -1,3 +1,7 @@
+# MINTutil Docker Compose Configuration
+# Copyright (c) 2025 MINT-RESEARCH
+# Contact: mint-research@neomint.com
+
 version: '3.8'
 
 services:
