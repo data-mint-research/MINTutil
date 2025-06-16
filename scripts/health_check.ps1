@@ -1,7 +1,31 @@
-# MINTutil System Health Check - Aktualisierte Version
-# Verwendet modulare Struktur f?r bessere Wartbarkeit
-
 #Requires -Version 5.1
+<#
+.SYNOPSIS
+    MINTutil System Health Check - Prueft Systemvoraussetzungen und Konfiguration
+.DESCRIPTION
+    Fuehrt umfassende Systemchecks durch, um sicherzustellen, dass MINTutil
+    korrekt funktioniert. Unterstuetzt verschiedene Modi und automatische Reparatur.
+.PARAMETER Mode
+    Pruefungsmodus: quick, full, network, dependencies, logs
+.PARAMETER Fix
+    Aktiviert automatische Fehlerbehebung (Legacy, nutzt AutoFix)
+.PARAMETER AutoFix
+    Aktiviert automatische Fehlerbehebung
+.PARAMETER Export
+    Exportiert Health Report als Datei
+.PARAMETER Verbose
+    Zeigt detaillierte Informationen
+.PARAMETER Silent
+    Unterdrueckt Konsolenausgabe
+.EXAMPLE
+    .\health_check.ps1
+    .\health_check.ps1 -Mode full -AutoFix
+    .\health_check.ps1 -Export
+.NOTES
+    Autor: MINTutil Team
+    Datum: 2024-01-01
+    Version: 2.0.0
+#>
 
 param(
     [ValidateSet('quick', 'full', 'network', 'dependencies', 'logs')]
@@ -58,7 +82,7 @@ function Test-SystemInfo {
         Add-Info "System" "Festplatte: $usedGB GB belegt, $freeGB GB frei"
         
         if ($freeGB -lt 1) {
-            Add-Warning "System" "Wenig Festplattenspeicher verf?gbar" "Speicherplatz freigeben"
+            Add-Warning "System" "Wenig Festplattenspeicher verfuegbar" "Speicherplatz freigeben"
         }
     }
 }
@@ -82,7 +106,7 @@ function Test-Logs {
         $warnings = Select-String -Path $logFile.FullName -Pattern "WARNING|WARN" -CaseSensitive
         
         if ($errors.Count -gt 0) {
-            Add-Warning "Logs" "$($errors.Count) Fehler in $($logFile.Name)" "Log-Datei pr?fen"
+            Add-Warning "Logs" "$($errors.Count) Fehler in $($logFile.Name)" "Log-Datei pruefen"
         }
         if ($warnings.Count -gt 0) {
             Add-Info "Logs" "$($warnings.Count) Warnungen in $($logFile.Name)"
@@ -99,25 +123,25 @@ function Show-Summary {
         Write-Log "   MINTutil kann nicht gestartet werden." "ERROR"
         Write-Log "   Bitte beheben Sie zuerst die kritischen Fehler." "ERROR"
     } elseif ($script:hasErrors -or $script:Issues.Count -gt 0) {
-        Write-Log "??  WARNUNGEN gefunden!" "WARNING"
-        Write-Log "   MINTutil kann mit Einschr?nkungen gestartet werden." "WARNING"
-        Write-Log "   Einige Features k?nnten nicht verf?gbar sein." "WARNING"
+        Write-Log "?  WARNUNGEN gefunden!" "WARNING"
+        Write-Log "   MINTutil kann mit Einschraenkungen gestartet werden." "WARNING"
+        Write-Log "   Einige Features koennten nicht verfuegbar sein." "WARNING"
     } else {
         Write-Log "? Alle Checks erfolgreich!" "SUCCESS"
         Write-Log "   MINTutil ist bereit zur Verwendung." "SUCCESS"
     }
     
-    # N?chste Schritte
+    # Naechste Schritte
     if (-not $script:hasCriticalErrors) {
         if (-not $Silent) {
-            Write-Host "`nN?chste Schritte:" -ForegroundColor Cyan
+            Write-Host "`nNaechste Schritte:" -ForegroundColor Cyan
             
             if (-not $env:VIRTUAL_ENV) {
                 Write-Host "  1. Virtual Environment aktivieren: .\venv\Scripts\Activate.ps1" -ForegroundColor Yellow
             }
             
             if ($script:hasErrors -or $script:Issues.Count -gt 0) {
-                Write-Host "  2. Beheben Sie die Warnungen f?r volle Funktionalit?t" -ForegroundColor Yellow
+                Write-Host "  2. Beheben Sie die Warnungen fuer volle Funktionalitaet" -ForegroundColor Yellow
             }
             
             Write-Host "  3. MINTutil starten: .\mint.ps1 start" -ForegroundColor Green
@@ -165,7 +189,7 @@ function Show-Report {
         foreach ($issue in $script:Issues) {
             Write-Host "   [$($issue.Category)] $($issue.Message)" -ForegroundColor Red
             if ($issue.Solution) {
-                Write-Host "      ? L?sung: $($issue.Solution)" -ForegroundColor DarkGray
+                Write-Host "      ? Loesung: $($issue.Solution)" -ForegroundColor DarkGray
             }
         }
     }
@@ -202,13 +226,13 @@ function Export-Report {
     $report += "Modus: $Mode"
     $report += ""
     
-    # Alle Eintr?ge
+    # Alle Eintraege
     $allEntries = $script:Issues + $script:Warnings + $script:Info | Sort-Object Severity, Category
     
     foreach ($entry in $allEntries) {
         $report += "[$($entry.Severity)] [$($entry.Category)] $($entry.Message)"
         if ($entry.Solution) {
-            $report += "    L?sung: $($entry.Solution)"
+            $report += "    Loesung: $($entry.Solution)"
         }
     }
     
@@ -247,7 +271,7 @@ function Start-HealthCheck {
         Write-Host ""
     }
     
-    # F?hre Tests durch
+    # Fuehre Tests durch
     Test-SystemInfo
     
     if ($Mode -eq 'quick' -or $Mode -eq 'full') {
@@ -291,12 +315,12 @@ function Start-HealthCheck {
 
 # Hauptprogramm
 try {
-    # F?r Kompatibilit?t mit Legacy-Code
+    # Fuer Kompatibilitaet mit Legacy-Code
     if ($Fix) { $AutoFix = $true }
     
     Start-HealthCheck
 } catch {
-    Write-Log "Fehler w?hrend der Diagnose: $($_.Exception.Message)" "ERROR"
+    Write-Log "Fehler waehrend der Diagnose: $($_.Exception.Message)" "ERROR"
     
     if ($Verbose -and -not $Silent) {
         Write-Host "`nDetails:" -ForegroundColor DarkGray
