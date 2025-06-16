@@ -1,3 +1,0 @@
-Test file to check write access from Claude
-Created: 2025-06-16
-This file can be safely deleted.
