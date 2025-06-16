@@ -1,21 +1,21 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    MINTutil CLI - Zentrale Steuerungskonsole fuer modulare Infrastruktur-Tools
+    MINTutil CLI - Central control console for modular infrastructure tools
 .DESCRIPTION
-    Haupteinstiegspunkt fuer MINTutil. Bietet Subkommandos fuer Initialisierung,
-    Start, Update und Systemdiagnose. Unterstuetzt One-Click-Installation.
+    Main entry point for MINTutil. Provides subcommands for initialization,
+    start, update and system diagnostics. Supports one-click installation.
 .PARAMETER Command
-    Verfuegbare Kommandos: install, init, start, stop, update, doctor, help
+    Available commands: install, init, start, stop, update, doctor, help
 .PARAMETER Args
-    Zusaetzliche Argumente fuer das gewaehlte Kommando
+    Additional arguments for the selected command
 .EXAMPLE
-    .\mint.ps1 install    # One-Click-Installation
-    .\mint.ps1 start      # MINTutil starten
-    .\mint.ps1 doctor     # System-Check
+    .\mint.ps1 install    # One-click installation
+    .\mint.ps1 start      # Start MINTutil
+    .\mint.ps1 doctor     # System check
 .NOTES
-    Autor: MINTutil Team
-    Datum: 2024-01-01
+    Author: skr
+    Date: 2024-01-01
     Version: 0.1.0
 #>
 
@@ -29,29 +29,29 @@ param(
     [string[]]$Args = @()
 )
 
-# Setze strikte Fehlerbehandlung
+# Set strict error handling
 $ErrorActionPreference = 'Stop'
 $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
 
-# Globale Variablen
+# Global variables
 $script:MintUtilRoot = $PSScriptRoot
 $script:ScriptsPath = Join-Path $MintUtilRoot "scripts"
 $script:LogsPath = Join-Path $MintUtilRoot "logs"
 $script:LogFile = Join-Path $script:LogsPath "mintutil-cli.log"
 $script:Version = "0.1.0"
 
-# Logging-Funktionen
+# Logging functions
 function Initialize-Logging {
     <#
     .SYNOPSIS
-        Initialisiert das Logging-System
+        Initializes the logging system
     #>
     try {
         if (-not (Test-Path $script:LogsPath)) {
             New-Item -ItemType Directory -Path $script:LogsPath -Force | Out-Null
         }
         
-        # Session-Start im Log markieren
+        # Mark session start in log
         $sessionStart = "`n" + "=" * 80 + "`n"
         $sessionStart += "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] [INFO] === MINTutil Session Start ===`n"
         $sessionStart += "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] [INFO] Version: $script:Version`n"
@@ -60,14 +60,14 @@ function Initialize-Logging {
         
         $sessionStart | Out-File -FilePath $script:LogFile -Append -Encoding UTF8
     } catch {
-        Write-Warning "Logging konnte nicht initialisiert werden: $_"
+        Write-Warning "Could not initialize logging: $_"
     }
 }
 
 function Write-Log {
     <#
     .SYNOPSIS
-        Schreibt eine Nachricht ins Log
+        Writes a message to the log
     #>
     param(
         [Parameter(Mandatory = $true)]
@@ -81,12 +81,12 @@ function Write-Log {
         $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
         $logEntry = "[$timestamp] [$Level] $Message"
         
-        # In Datei schreiben
+        # Write to file
         if (Test-Path $script:LogFile) {
             $logEntry | Out-File -FilePath $script:LogFile -Append -Encoding UTF8
         }
         
-        # Konsolen-Ausgabe mit Farbe
+        # Console output with color
         switch ($Level) {
             'ERROR' { Write-Host $Message -ForegroundColor Red }
             'WARN'  { Write-Host $Message -ForegroundColor Yellow }
@@ -94,14 +94,14 @@ function Write-Log {
             default { Write-Verbose $Message }
         }
     } catch {
-        # Fehler beim Logging ignorieren, um Hauptprogramm nicht zu stoeren
+        # Ignore logging errors to not disrupt main program
     }
 }
 
 function Write-MintHeader {
     <#
     .SYNOPSIS
-        Zeigt den MINTutil ASCII-Header
+        Shows the MINTutil ASCII header
     #>
     Write-Host ""
     Write-Host "  __  __ ___ _   _ _____ _   _ _   _ _ " -ForegroundColor Cyan
@@ -114,33 +114,33 @@ function Write-MintHeader {
     Write-Host " ========================================" -ForegroundColor DarkGray
     Write-Host ""
     
-    Write-Log "MINTutil gestartet - v$script:Version" -Level INFO
+    Write-Log "MINTutil started - v$script:Version" -Level INFO
 }
 
 function Test-Prerequisites {
     <#
     .SYNOPSIS
-        Prueft minimale Voraussetzungen fuer MINTutil
+        Checks minimal prerequisites for MINTutil
     #>
-    Write-Log "Pruefe Systemvoraussetzungen..." -Level INFO
+    Write-Log "Checking system prerequisites..." -Level INFO
     $issues = @()
     
     # PowerShell Version
     if ($PSVersionTable.PSVersion.Major -lt 5) {
-        $msg = "PowerShell 5.1 oder hoeher wird benoetigt (aktuell: $($PSVersionTable.PSVersion))"
+        $msg = "PowerShell 5.1 or higher required (current: $($PSVersionTable.PSVersion))"
         $issues += $msg
         Write-Log $msg -Level ERROR
     } else {
-        Write-Log "PowerShell Version OK: $($PSVersionTable.PSVersion)" -Level INFO
+        Write-Log "PowerShell version OK: $($PSVersionTable.PSVersion)" -Level INFO
     }
     
-    # Scripts-Verzeichnis
+    # Scripts directory
     if (-not (Test-Path $script:ScriptsPath)) {
-        $msg = "Scripts-Verzeichnis fehlt: $script:ScriptsPath"
+        $msg = "Scripts directory missing: $script:ScriptsPath"
         $issues += $msg
         Write-Log $msg -Level ERROR
     } else {
-        Write-Log "Scripts-Verzeichnis vorhanden" -Level INFO
+        Write-Log "Scripts directory present" -Level INFO
     }
     
     return $issues
@@ -149,36 +149,36 @@ function Test-Prerequisites {
 function Invoke-MintCommand {
     <#
     .SYNOPSIS
-        Fuehrt das gewaehlte Kommando aus
+        Executes the selected command
     #>
     param(
         [string]$Command,
         [string[]]$Arguments
     )
     
-    Write-Log "Fuehre Kommando aus: $Command" -Level INFO
+    Write-Log "Executing command: $Command" -Level INFO
     
     $exitCode = 0
     
     switch ($Command) {
         'install' {
-            # One-Click-Installation
-            Write-Host "? Starte One-Click-Installation..." -ForegroundColor Green
+            # One-click installation
+            Write-Host "? Starting one-click installation..." -ForegroundColor Green
             Write-Host ""
             
-            # Pruefe ob bereits installiert
+            # Check if already installed
             if (Test-Path "$script:MintUtilRoot\venv") {
-                Write-Host "? MINTutil ist bereits installiert!" -ForegroundColor Green
-                Write-Host "   Verwenden Sie 'mint start' zum Starten." -ForegroundColor DarkGray
+                Write-Host "? MINTutil is already installed!" -ForegroundColor Green
+                Write-Host "   Use 'mint start' to launch." -ForegroundColor DarkGray
                 $exitCode = 0
             } else {
-                # Fuehre Setup aus
+                # Run setup
                 $setupScript = Join-Path $script:ScriptsPath "setup_windows.ps1"
                 if (Test-Path $setupScript) {
                     & $setupScript -InstallPath $script:MintUtilRoot @Arguments
                     $exitCode = $LASTEXITCODE
                 } else {
-                    Write-Error "Setup-Script nicht gefunden. Bitte laden Sie MINTutil erneut herunter."
+                    Write-Error "Setup script not found. Please download MINTutil again."
                     $exitCode = 1
                 }
             }
@@ -187,45 +187,45 @@ function Invoke-MintCommand {
         'init' {
             $scriptPath = Join-Path $script:ScriptsPath "init_project.ps1"
             if (Test-Path $scriptPath) {
-                Write-Log "Starte Initialisierung..." -Level INFO
+                Write-Log "Starting initialization..." -Level INFO
                 & $scriptPath @Arguments
                 $exitCode = $LASTEXITCODE
             } else {
-                Write-Log "Initialisierungsskript nicht gefunden: $scriptPath" -Level ERROR
-                Write-Error "Initialisierungsskript nicht gefunden: $scriptPath"
+                Write-Log "Initialization script not found: $scriptPath" -Level ERROR
+                Write-Error "Initialization script not found: $scriptPath"
                 $exitCode = 1
             }
         }
         
         'start' {
-            # Pruefe ob Installation vollstaendig
+            # Check if installation is complete
             if (-not (Test-Path "$script:MintUtilRoot\venv")) {
-                Write-Host "?  MINTutil ist noch nicht installiert!" -ForegroundColor Yellow
-                Write-Host "   Fuehren Sie zuerst 'mint install' aus." -ForegroundColor DarkGray
+                Write-Host "?  MINTutil is not installed yet!" -ForegroundColor Yellow
+                Write-Host "   Run 'mint install' first." -ForegroundColor DarkGray
                 $exitCode = 1
             } else {
                 $scriptPath = Join-Path $script:ScriptsPath "start_ui.ps1"
                 if (Test-Path $scriptPath) {
-                    Write-Log "Starte Web-UI..." -Level INFO
+                    Write-Log "Starting Web UI..." -Level INFO
                     & $scriptPath @Arguments
                     $exitCode = $LASTEXITCODE
                 } else {
-                    Write-Log "Start-Skript nicht gefunden: $scriptPath" -Level ERROR
-                    Write-Error "Start-Skript nicht gefunden: $scriptPath"
+                    Write-Log "Start script not found: $scriptPath" -Level ERROR
+                    Write-Error "Start script not found: $scriptPath"
                     $exitCode = 1
                 }
             }
         }
         
         'stop' {
-            Write-Host "? Stoppe MINTutil..." -ForegroundColor Yellow
-            # Finde Streamlit-Prozesse
+            Write-Host "? Stopping MINTutil..." -ForegroundColor Yellow
+            # Find Streamlit processes
             $processes = Get-Process | Where-Object { $_.ProcessName -like "*streamlit*" -or $_.CommandLine -like "*streamlit*" }
             if ($processes) {
                 $processes | Stop-Process -Force
-                Write-Host "? MINTutil wurde gestoppt." -ForegroundColor Green
+                Write-Host "? MINTutil stopped." -ForegroundColor Green
             } else {
-                Write-Host "?  MINTutil laeuft nicht." -ForegroundColor DarkGray
+                Write-Host "?  MINTutil is not running." -ForegroundColor DarkGray
             }
             $exitCode = 0
         }
@@ -233,12 +233,12 @@ function Invoke-MintCommand {
         'update' {
             $scriptPath = Join-Path $script:ScriptsPath "update.ps1"
             if (Test-Path $scriptPath) {
-                Write-Log "Starte Update-Prozess..." -Level INFO
+                Write-Log "Starting update process..." -Level INFO
                 & $scriptPath @Arguments
                 $exitCode = $LASTEXITCODE
             } else {
-                Write-Log "Update-Skript nicht gefunden: $scriptPath" -Level ERROR
-                Write-Error "Update-Skript nicht gefunden: $scriptPath"
+                Write-Log "Update script not found: $scriptPath" -Level ERROR
+                Write-Error "Update script not found: $scriptPath"
                 $exitCode = 1
             }
         }
@@ -246,12 +246,12 @@ function Invoke-MintCommand {
         'doctor' {
             $scriptPath = Join-Path $script:ScriptsPath "health_check.ps1"
             if (Test-Path $scriptPath) {
-                Write-Log "Starte System-Diagnose..." -Level INFO
+                Write-Log "Starting system diagnostics..." -Level INFO
                 & $scriptPath @Arguments
                 $exitCode = $LASTEXITCODE
             } else {
-                Write-Log "Diagnose-Skript nicht gefunden: $scriptPath" -Level ERROR
-                Write-Error "Diagnose-Skript nicht gefunden: $scriptPath"
+                Write-Log "Diagnostics script not found: $scriptPath" -Level ERROR
+                Write-Error "Diagnostics script not found: $scriptPath"
                 $exitCode = 1
             }
         }
@@ -273,83 +273,83 @@ function Invoke-MintCommand {
 function Show-Help {
     <#
     .SYNOPSIS
-        Zeigt die Hilfe fuer MINTutil
+        Shows help for MINTutil
     #>
-    Write-Host "Verwendung: .\mint.ps1 <command> [args]" -ForegroundColor Yellow
+    Write-Host "Usage: .\mint.ps1 <command> [args]" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "Verfuegbare Kommandos:" -ForegroundColor Green
-    Write-Host "  install   ? One-Click-Installation (empfohlen fuer neue Nutzer)"
-    Write-Host "  start     ?  Startet die MINTutil Web-Oberflaeche"
-    Write-Host "  stop      ?  Stoppt MINTutil"
-    Write-Host "  doctor    ? Fuehrt Systemdiagnose durch"
-    Write-Host "  update    ? Aktualisiert MINTutil-Komponenten"
-    Write-Host "  init      ? Initialisiert Projekt (fuer Entwickler)"
-    Write-Host "  help      ? Zeigt diese Hilfe"
+    Write-Host "Available commands:" -ForegroundColor Green
+    Write-Host "  install   ? One-click installation (recommended for new users)"
+    Write-Host "  start     ?  Start the MINTutil web interface"
+    Write-Host "  stop      ?  Stop MINTutil"
+    Write-Host "  doctor    ? Run system diagnostics"
+    Write-Host "  update    ? Update MINTutil components"
+    Write-Host "  init      ? Initialize project (for developers)"
+    Write-Host "  help      ? Show this help"
     Write-Host ""
-    Write-Host "Beispiele:" -ForegroundColor Green
-    Write-Host "  .\mint.ps1 install       # Installiert MINTutil komplett"
-    Write-Host "  .\mint.ps1 start         # Startet Web-UI"
-    Write-Host "  .\mint.ps1 doctor        # Prueft Systemstatus"
+    Write-Host "Examples:" -ForegroundColor Green
+    Write-Host "  .\mint.ps1 install       # Install MINTutil completely"
+    Write-Host "  .\mint.ps1 start         # Start Web UI"
+    Write-Host "  .\mint.ps1 doctor        # Check system status"
     Write-Host ""
     Write-Host "Quick Start:" -ForegroundColor Cyan
-    Write-Host "  Neu hier? Fuehren Sie einfach aus: .\mint.ps1 install"
+    Write-Host "  New here? Just run: .\mint.ps1 install"
     Write-Host ""
-    Write-Host "Weitere Informationen:" -ForegroundColor Blue
+    Write-Host "More information:" -ForegroundColor Blue
     Write-Host "  GitHub: https://github.com/data-mint-research/MINTutil"
-    Write-Host "  Docs:   https://github.com/data-mint-research/MINTutil/wiki"
+    Write-Host "  Docs:   https://github.com/data-mint-research/MINTutil/tree/main/docs"
     Write-Host "  Logs:   $script:LogFile"
     
-    Write-Log "Hilfe angezeigt" -Level INFO
+    Write-Log "Help displayed" -Level INFO
 }
 
-# Hauptprogramm
+# Main program
 $exitCode = 0
 
 try {
-    # Initialisiere Logging
+    # Initialize logging
     Initialize-Logging
     
-    # Zeige Header
+    # Show header
     Write-MintHeader
     
-    # Pruefe Voraussetzungen
+    # Check prerequisites
     $prerequisites = Test-Prerequisites
     if ($prerequisites.Count -gt 0) {
-        Write-Host "?  Voraussetzungen nicht erfuellt:" -ForegroundColor Red
+        Write-Host "?  Prerequisites not met:" -ForegroundColor Red
         $prerequisites | ForEach-Object { Write-Host "   - $_" -ForegroundColor Red }
-        Write-Log "Voraussetzungen nicht erfuellt. Beende mit Fehler." -Level ERROR
+        Write-Log "Prerequisites not met. Exiting with error." -Level ERROR
         exit 1
     }
     
-    # Fuehre Kommando aus
+    # Execute command
     if ([string]::IsNullOrWhiteSpace($Command)) {
         Show-Help
         $exitCode = 0
     } else {
-        Write-Host "? Fuehre aus: $Command" -ForegroundColor Green
+        Write-Host "? Executing: $Command" -ForegroundColor Green
         Write-Host ""
         $exitCode = Invoke-MintCommand -Command $Command -Arguments $Args
     }
     
-    Write-Log "Kommando abgeschlossen mit Exit-Code: $exitCode" -Level INFO
+    Write-Log "Command completed with exit code: $exitCode" -Level INFO
     
 } catch {
     $errorMsg = $_.Exception.Message
     Write-Host ""
-    Write-Host "? Fehler aufgetreten:" -ForegroundColor Red
+    Write-Host "? Error occurred:" -ForegroundColor Red
     Write-Host "   $errorMsg" -ForegroundColor Red
     Write-Host ""
-    Write-Host "Fuer Details: .\mint.ps1 doctor" -ForegroundColor Yellow
-    Write-Host "Log-Datei: $script:LogFile" -ForegroundColor Yellow
+    Write-Host "For details: .\mint.ps1 doctor" -ForegroundColor Yellow
+    Write-Host "Log file: $script:LogFile" -ForegroundColor Yellow
     
-    Write-Log "Kritischer Fehler: $errorMsg" -Level ERROR
-    Write-Log "Stack Trace: $($_.ScriptStackTrace)" -Level ERROR
+    Write-Log "Critical error: $errorMsg" -Level ERROR
+    Write-Log "Stack trace: $($_.ScriptStackTrace)" -Level ERROR
     
     $exitCode = 1
 } finally {
-    # Session-Ende markieren
-    Write-Log "=== MINTutil Session Ende (Exit-Code: $exitCode) ===" -Level INFO
+    # Mark session end
+    Write-Log "=== MINTutil session end (exit code: $exitCode) ===" -Level INFO
 }
 
-# Beende mit korrektem Exit-Code
+# Exit with correct exit code
 exit $exitCode
