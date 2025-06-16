@@ -24,7 +24,7 @@ $ErrorActionPreference = 'Stop'
 # Globale Variablen
 $script:MintUtilRoot = Split-Path $PSScriptRoot -Parent
 $script:EnvFile = Join-Path $script:MintUtilRoot ".env"
-$script:EnvTemplate = Join-Path $script:MintUtilRoot "config\system.env.template"
+$script:EnvExample = Join-Path $script:MintUtilRoot ".env.example"
 $script:RequirementsFile = Join-Path $script:MintUtilRoot "requirements.txt"
 $script:ConfirmScript = Join-Path $PSScriptRoot "confirm.ps1"
 $script:LogFile = Join-Path $script:MintUtilRoot "logs\mintutil-cli.log"
@@ -257,13 +257,14 @@ function Initialize-EnvFile {
         }
     }
     
-    # Lade Template
-    $envTemplate = if (Test-Path $script:EnvTemplate) {
-        Write-Log "Lade .env aus Template: $script:EnvTemplate" -Level INFO
-        Get-Content $script:EnvTemplate -Raw
+    # Kopiere .env.example zu .env
+    if (Test-Path $script:EnvExample) {
+        Write-Log "Kopiere .env.example zu .env" -Level INFO
+        Copy-Item $script:EnvExample $script:EnvFile -Force
+        $envTemplate = Get-Content $script:EnvFile -Raw
     } else {
         Write-Log "Template nicht gefunden, verwende Standard" -Level WARN
-        @"
+        $envTemplate = @"
 # MINTutil Environment Configuration
 # Generiert am: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
 
