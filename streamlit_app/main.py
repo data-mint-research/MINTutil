@@ -54,7 +54,7 @@ def render_sidebar():
                 
         # Footer
         st.markdown("---")
-        st.markdown("### ?? System")
+        st.markdown("### ? System")
         if st.button("? Health Check", use_container_width=True):
             selected = "__health_check__"
         if st.button("? Logs", use_container_width=True):
@@ -190,7 +190,7 @@ def render_logs():
             
             # Download button
             st.download_button(
-                "? Log herunterladen",
+                "?? Log herunterladen",
                 log_content,
                 file_name=f"{selected_log.name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
                 mime="text/plain"
