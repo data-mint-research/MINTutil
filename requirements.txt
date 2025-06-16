@@ -6,7 +6,7 @@ numpy>=1.24.0
 python-dotenv>=1.0.0
 requests>=2.31.0
 pyyaml>=6.0
-pathlib>=1.0.1
+# pathlib>=1.0.1  # REMOVED - pathlib is built-in since Python 3.4
 
 # Testing
 pytest>=7.4.0
