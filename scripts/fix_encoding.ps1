@@ -4,6 +4,14 @@
 Write-Host "MINTutil Encoding Fix Script" -ForegroundColor Cyan
 Write-Host "===========================" -ForegroundColor Cyan
 
+# Get the script's directory and move to project root
+$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+$projectRoot = Split-Path -Parent $scriptPath
+
+# Change to project root directory
+Push-Location $projectRoot
+Write-Host "Working directory: $projectRoot" -ForegroundColor Yellow
+
 # Files with known encoding issues
 $filesToFix = @(
     "scripts/confirm.ps1",
@@ -19,7 +27,8 @@ $filesToFix = @(
 
 # Check if we're in the right directory
 if (-not (Test-Path "mint.ps1")) {
-    Write-Host "Error: Please run this script from the MINTutil root directory" -ForegroundColor Red
+    Write-Host "Error: Not in MINTutil root directory" -ForegroundColor Red
+    Pop-Location
     exit 1
 }
 
@@ -27,41 +36,51 @@ Write-Host "`nChecking and fixing encoding issues..." -ForegroundColor Yellow
 
 $fixedCount = 0
 $errorCount = 0
+$skippedCount = 0
 
 foreach ($file in $filesToFix) {
-    if (Test-Path $file) {
+    # Build absolute path
+    $fullPath = Join-Path $projectRoot $file
+    
+    if (Test-Path $fullPath) {
         try {
             Write-Host "Processing: $file" -NoNewline
             
             # Read with automatic encoding detection
-            $content = Get-Content $file -Raw -Encoding Default
+            $content = Get-Content $fullPath -Raw -Encoding Default
             
             # Check if file contains typical encoding issues (? instead of umlauts)
-            if ($content -match '\?') {
+            $questionMarkCount = ([regex]::Matches($content, '\?')).Count
+            if ($questionMarkCount -gt 0) {
+                Write-Host " - Found $questionMarkCount encoding issues" -ForegroundColor Yellow -NoNewline
+                
                 # Try to read with specific encodings
                 $encodings = @('UTF8', 'Default', 'Unicode', 'ASCII')
-                $bestContent = $null
+                $bestContent = $content
+                $lowestQuestionCount = $questionMarkCount
                 
                 foreach ($encoding in $encodings) {
                     try {
-                        $testContent = Get-Content $file -Raw -Encoding $encoding
-                        # Check if this encoding produces fewer question marks
-                        if (($testContent -split '\?' | Measure-Object).Count -lt ($bestContent -split '\?' | Measure-Object).Count) {
-                            $bestContent = $testContent
+                        $testContent = Get-Content $fullPath -Raw -Encoding $encoding -ErrorAction SilentlyContinue
+                        if ($testContent) {
+                            $testQuestionCount = ([regex]::Matches($testContent, '\?')).Count
+                            
+                            if ($testQuestionCount -lt $lowestQuestionCount) {
+                                $bestContent = $testContent
+                                $lowestQuestionCount = $testQuestionCount
+                            }
                         }
                     } catch {
                         # Skip encoding if it fails
                     }
                 }
                 
-                if ($bestContent) {
-                    $content = $bestContent
-                }
+                $content = $bestContent
             }
             
             # Write as UTF-8 without BOM
             $utf8NoBom = New-Object System.Text.UTF8Encoding $false
-            [System.IO.File]::WriteAllText($file, $content, $utf8NoBom)
+            [System.IO.File]::WriteAllText($fullPath, $content, $utf8NoBom)
             
             Write-Host " - Fixed!" -ForegroundColor Green
             $fixedCount++
@@ -71,6 +90,7 @@ foreach ($file in $filesToFix) {
         }
     } else {
         Write-Host "Skipping: $file (not found)" -ForegroundColor DarkGray
+        $skippedCount++
     }
 }
 
@@ -80,14 +100,24 @@ Write-Host "  Files processed: $fixedCount" -ForegroundColor Green
 if ($errorCount -gt 0) {
     Write-Host "  Errors: $errorCount" -ForegroundColor Red
 }
+if ($skippedCount -gt 0) {
+    Write-Host "  Skipped: $skippedCount" -ForegroundColor DarkGray
+}
 
-Write-Host "`nAll files have been converted to UTF-8 without BOM." -ForegroundColor Green
-Write-Host "Please commit these changes to fix the encoding issues." -ForegroundColor Yellow
+if ($fixedCount -gt 0) {
+    Write-Host "`nFiles have been converted to UTF-8 without BOM." -ForegroundColor Green
+    Write-Host "Please review and commit these changes." -ForegroundColor Yellow
+}
+
+# Restore original location
+Pop-Location
 
 # Optional: Show git status
-Write-Host "`nGit status:" -ForegroundColor Cyan
-git status --short
-
-Write-Host "`nTo commit these fixes:" -ForegroundColor Yellow
-Write-Host "  git add -A" -ForegroundColor White
-Write-Host "  git commit -m 'Fix encoding issues - convert to UTF-8 without BOM'" -ForegroundColor White
+if ($fixedCount -gt 0) {
+    Write-Host "`nGit status:" -ForegroundColor Cyan
+    git status --short
+    
+    Write-Host "`nTo commit these fixes:" -ForegroundColor Yellow
+    Write-Host "  git add -A" -ForegroundColor White
+    Write-Host "  git commit -m 'Fix encoding issues - convert to UTF-8 without BOM'" -ForegroundColor White
+}
