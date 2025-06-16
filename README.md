@@ -1,119 +1,115 @@
+<div align="center">
+
 # MINTutil
 
-![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Status](https://img.shields.io/badge/status-active-success.svg)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)
-![NeoMINT](https://img.shields.io/badge/NeoMINT-compliant-brightgreen.svg)
+### ? Modular Infrastructure and Network Tools
 
-? **MINTutil** - Modulare, intelligente Netzwerk-Tools f?r Utility und Analyse
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/data-mint-research/MINTutil)
+[![NeoMINT](https://img.shields.io/badge/NeoMINT-compliant-brightgreen.svg)](docs/neomint-coding-practices.md)
+[![GitHub Issues](https://img.shields.io/github/issues/data-mint-research/MINTutil)](https://github.com/data-mint-research/MINTutil/issues)
 
-## ? Code-Qualit?t
+[Features](#-features) ? [Quick Start](#-quick-start) ? [Documentation](#-documentation) ? [Contributing](#-contributing)
 
-Dieses Projekt folgt den **NeoMINT Coding Practices v0.1** f?r optimale LLM-Kompatibilit?t:
-- ? Maximale Dateil?nge: 500 LOC
-- ? Keine Umlaute im Code (Work in Progress)
-- ? Zentrale Logging-Funktionen
-- ? Vollst?ndige Dokumentation
+</div>
 
-**Compliance pr?fen**: `.\scripts\check-neomint-compliance.ps1`
+---
 
-Details siehe [docs/neomint-coding-practices.md](docs/neomint-coding-practices.md)
+## ? Quick Start
 
-## ? Installation in 30 Sekunden
-
-?ffnen Sie **PowerShell als Administrator** und f?hren Sie aus:
+**Install MINTutil in one line** - Open PowerShell as Administrator:
 
 ```powershell
-# Standard-Installation
 irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex
-
-# Mit Chocolatey Package Manager (empfohlen)
-irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex -UseChocolatey
 ```
 
-Das war's! ? Das Setup-Script installiert automatisch alle Abh?ngigkeiten und startet MINTutil.
+That's it! The installer handles everything automatically. ?
 
-> **Hinweis**: F?r Linux/macOS oder erweiterte Installationsoptionen siehe [Erweiterte Installation](#-erweiterte-installation).
+<details>
+<summary>? Prefer Chocolatey package manager?</summary>
 
-## ? Was wird installiert?
-
-Das automatische Setup installiert:
-- ? Python 3.11 (falls nicht vorhanden)
-- ? Git (falls nicht vorhanden)
-- ? FFmpeg (f?r Transkriptionen)
-- ? Alle Python-Abh?ngigkeiten
-- ? MINTutil nach `C:\MINTutil`
-- ? Desktop-Verkn?pfung
-- ? Optional: Chocolatey Package Manager
-
-### ? Warum Chocolatey?
-
-[Chocolatey](https://chocolatey.org/) ist wie apt-get f?r Windows:
-- Einfache Installation: `choco install python git ffmpeg -y`
-- Updates mit einem Befehl: `choco upgrade all -y`
-- ?ber 8000 verf?gbare Pakete
-- Keine manuelle Suche nach Downloads
-
-## ? ?bersicht
-
-MINTutil ist eine modulare Plattform f?r verschiedene Analyse- und Verarbeitungstools mit optionaler KI-Integration. Das System bietet eine einheitliche Streamlit-basierte Benutzeroberfl?che f?r alle Tools.
-
-## ? Features
-
-- **? Ein-Klick-Installation**: Vollautomatisches Setup f?r Windows
-- **? Modulare Architektur**: Einfaches Hinzuf?gen neuer Tools
-- **? KI-Integration**: Optionale Unterst?tzung durch Ollama
-- **? Web-Interface**: Moderne Streamlit-UI
-- **? Lokale Verarbeitung**: Ihre Daten bleiben bei Ihnen
-- **?? Vielseitige Tools**: Von Transkription bis Datenanalyse
-- **? Docker-Support**: Einfaches Deployment
-- **? Chocolatey-Support**: Vereinfachtes Dependency Management
-
-## ? Erste Schritte nach der Installation
-
-1. **MINTutil starten**:
-   - Doppelklick auf die Desktop-Verkn?pfung, oder
-   - PowerShell: `C:\MINTutil\mint.ps1 start`
-
-2. **Browser ?ffnet sich automatisch** bei `http://localhost:8501`
-
-3. **Tool ausw?hlen** aus der Sidebar und loslegen!
-
-## ?? Verf?gbare Tools
-
-### ?? Transkription
-- YouTube-Videos transkribieren mit OpenAI Whisper
-- Lokale Audio/Video-Dateien verarbeiten
-- Automatische Namenskorrektur mit Glossar
-- Export als Markdown
-
-### ? Weitere Tools (in Entwicklung)
-- Datenanalyse und Visualisierung
-- Netzwerk-Utilities
-- API-Testing Tools
-- Und mehr...
-
-## ? Sicherheitshinweis
-
-**WICHTIG**: Die `.env` Datei enth?lt sensible Daten und darf **niemals** ins Repository committed werden!
-
-Nach der Installation:
 ```powershell
-# Konfiguration anpassen
+irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex -UseChocolatey
+```
+</details>
+
+---
+
+## ? What is MINTutil?
+
+MINTutil is a **modular platform** for utility and analysis tools with optional AI integration. Built with a modern **Streamlit UI**, it provides a unified interface for various tools while keeping your data local and secure.
+
+### ? Key Features
+
+- ? **Modular Architecture** - Easy to extend with new tools
+- ? **AI Integration** - Optional Ollama support for local LLMs
+- ? **Web Interface** - Clean, modern Streamlit UI
+- ? **Privacy First** - All processing happens locally
+- ? **One-Click Install** - Automated setup for Windows
+- ? **Docker Ready** - Container deployment support
+
+---
+
+## ?? Available Tools
+
+### ?? Transcription Tool
+- Transcribe YouTube videos with OpenAI Whisper
+- Process local audio/video files
+- Automatic name correction with glossary
+- Export to Markdown format
+
+### ? More Tools Coming Soon
+- Data analysis and visualization
+- Network utilities
+- API testing suite
+- Custom tool development framework
+
+---
+
+## ? Requirements
+
+The installer automatically handles all dependencies:
+
+- **Python 3.9+** (installs 3.11 if needed)
+- **Git** (for version control)
+- **FFmpeg** (for media processing)
+- **8GB RAM** recommended
+- **2GB free disk space**
+
+---
+
+## ? Getting Started
+
+### After Installation
+
+1. **Start MINTutil**
+   ```powershell
+   C:\MINTutil\mint.ps1 start
+   ```
+
+2. **Open your browser** to `http://localhost:8501`
+
+3. **Select a tool** from the sidebar and start using it!
+
+### Configuration
+
+Edit your settings:
+```powershell
 notepad C:\MINTutil\.env
 ```
 
-## ? Erweiterte Installation
+---
+
+## ? Documentation
+
+### Installation Options
 
 <details>
-<summary>? Linux/macOS Installation</summary>
+<summary>? Linux/macOS</summary>
 
 ```bash
-# Automatisches Setup-Script (in Entwicklung)
-curl -sSL https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_unix.sh | bash
-
-# Oder manuell:
+# Clone and setup
 git clone https://github.com/data-mint-research/MINTutil.git
 cd MINTutil
 python3 -m venv venv
@@ -124,195 +120,175 @@ streamlit run streamlit_app/main.py
 </details>
 
 <details>
-<summary>? Docker Installation</summary>
+<summary>? Docker</summary>
 
 ```bash
-# Mit Docker Compose
+# Using Docker Compose
 git clone https://github.com/data-mint-research/MINTutil.git
 cd MINTutil
 docker-compose up -d
-
-# Oder mit dem Setup-Script
-irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex -UseDocker
 ```
 </details>
 
 <details>
-<summary>? Installation mit Chocolatey</summary>
-
-```powershell
-# Chocolatey installieren (falls nicht vorhanden)
-Set-ExecutionPolicy Bypass -Scope Process -Force
-iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-
-# Dependencies mit Chocolatey installieren
-choco install python311 git ffmpeg -y
-
-# MINTutil installieren
-git clone https://github.com/data-mint-research/MINTutil.git C:\MINTutil
-cd C:\MINTutil
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-</details>
-
-<details>
-<summary>??? Entwickler-Installation</summary>
+<summary>??? Development Setup</summary>
 
 ```bash
-# Repository klonen
+# Clone repository
 git clone https://github.com/data-mint-research/MINTutil.git
 cd MINTutil
 
-# Development-Umgebung
+# Setup development environment
 python -m venv venv
 .\venv\Scripts\Activate.ps1  # Windows
+source venv/bin/activate     # Linux/macOS
+
+# Install dependencies
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 
-# Pre-commit hooks
+# Install pre-commit hooks
 pre-commit install
 ```
 </details>
 
-## ?? Projektstruktur
+### Project Structure
 
 ```
 MINTutil/
-? streamlit_app/      # Haupt-UI Anwendung
-? tools/              # Modulare Tools
-?   ? transkription/  # Transkriptions-Tool
-? scripts/            # Setup & Utility-Scripts
-? config/             # Konfigurationsdateien
-? tests/              # Test-Suite
-? docs/               # Dokumentation
+??? streamlit_app/      # Main UI application
+??? tools/              # Modular tools
+?   ??? transcription/  # Transcription tool
+??? scripts/            # Setup & utility scripts
+??? config/             # Configuration files
+??? tests/              # Test suite
+??? docs/               # Documentation
 ```
 
-## ? Entwicklung
+---
 
-### Neues Tool hinzuf?gen
+## ? Development
 
-1. Erstellen Sie einen Ordner unter `tools/`
-2. Implementieren Sie `tool.meta.yaml` mit Metadaten
-3. Erstellen Sie `ui.py` mit `render()` Funktion
-4. Tool erscheint automatisch in der UI
+### Adding a New Tool
 
-Beispiel-Struktur:
-```
-tools/
-? mein_tool/
-    ? tool.meta.yaml
-    ? ui.py
-    ? scripts/
-```
+1. Create a folder under `tools/`
+2. Add `tool.meta.yaml` with metadata
+3. Create `ui.py` with a `render()` function
+4. Your tool appears automatically in the UI!
 
-### Tests ausf?hren
+### Code Quality
+
 ```bash
-pytest tests/ -v
-```
-
-### Code-Qualit?t
-```bash
-# NeoMINT Compliance pr?fen
+# Check NeoMINT compliance
 .\scripts\check-neomint-compliance.ps1
 
-# Formatierung
+# Run tests
+pytest tests/ -v
+
+# Format code
 black .
 
-# Linting
+# Lint
 flake8 .
-pylint streamlit_app tools
 ```
 
-## ? Fehlerbehebung
+### NeoMINT Coding Standards
 
-### Automatisches Setup schl?gt fehl
-```powershell
-# Manuell einzelne Komponenten installieren
-.\scripts\setup_windows.ps1 -SkipPython  # Wenn Python schon installiert
-.\scripts\setup_windows.ps1 -SkipGit     # Wenn Git schon installiert
+This project follows [NeoMINT Coding Practices](docs/neomint-coding-practices.md) for optimal LLM compatibility:
+- Maximum 500 lines per file
+- Central logging functions
+- Complete documentation
+- ASCII-only codebase
 
-# Mit Chocolatey erzwingen
-.\scripts\setup_windows.ps1 -ForceChocolatey
-```
+---
 
-### Health Check ausf?hren
-```powershell
-C:\MINTutil\mint.ps1 doctor
-```
+## ? Troubleshooting
 
-### Software mit Chocolatey verwalten
-```powershell
-# Installierte Pakete anzeigen
-choco list --local-only
-
-# Alle Pakete updaten
-choco upgrade all -y
-
-# Spezifisches Paket updaten
-choco upgrade python311 -y
-```
-
-### Logs pr?fen
-```powershell
-Get-Content C:\MINTutil\logs\mintutil-cli.log -Tail 50
-```
-
-### H?ufige Probleme
+### Common Issues
 
 <details>
-<summary>Port 8501 bereits belegt</summary>
+<summary>Setup fails?</summary>
 
 ```powershell
-# Prozess finden
+# Skip already installed components
+.\scripts\setup_windows.ps1 -SkipPython
+.\scripts\setup_windows.ps1 -SkipGit
+
+# Force Chocolatey installation
+.\scripts\setup_windows.ps1 -ForceChocolatey
+```
+</details>
+
+<details>
+<summary>Port 8501 in use?</summary>
+
+```powershell
+# Find process
 netstat -ano | findstr :8501
 
-# In .env anderen Port setzen
+# Change port in .env
 STREAMLIT_SERVER_PORT=8502
 ```
 </details>
 
 <details>
-<summary>Module nicht gefunden</summary>
+<summary>Module not found?</summary>
 
 ```powershell
-# Virtual Environment aktivieren
+# Activate virtual environment
 C:\MINTutil\venv\Scripts\Activate.ps1
 
-# Requirements neu installieren
+# Reinstall requirements
 pip install -r requirements.txt --force-reinstall
 ```
 </details>
 
-## ? Lizenz
+### System Diagnostics
 
-Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe [LICENSE](LICENSE) Datei f?r Details.
+```powershell
+# Run health check
+C:\MINTutil\mint.ps1 doctor
 
-Copyright ? 2025 MINT-RESEARCH
-
-## ? Beitr?ge
-
-Beitr?ge sind willkommen! Bitte beachten Sie:
-
-1. Forken Sie das Repository
-2. Erstellen Sie einen Feature-Branch (`git checkout -b feature/AmazingFeature`)
-3. Committen Sie Ihre ?nderungen (`git commit -m 'Add some AmazingFeature'`)
-4. Pushen Sie zum Branch (`git push origin feature/AmazingFeature`)
-5. ?ffnen Sie einen Pull Request
-
-**Wichtig**: Alle Beitr?ge m?ssen den [NeoMINT Coding Practices](docs/neomint-coding-practices.md) entsprechen.
-
-## ? Support
-
-- ? Email: mint-research@neomint.com
-- ? Discord: [MINTutil Community](https://discord.gg/mintutil)
-- ? Wiki: [GitHub Wiki](https://github.com/data-mint-research/MINTutil/wiki)
-- ? Issues: [GitHub Issues](https://github.com/data-mint-research/MINTutil/issues)
+# Check logs
+Get-Content C:\MINTutil\logs\mintutil-cli.log -Tail 50
+```
 
 ---
 
-<p align="center">
-  <strong>MINTutil</strong> - Made with ?? by MINT-RESEARCH<br>
-  <sub>Stern ? uns auf GitHub wenn es dir gef?llt!</sub>
-</p>
+## ? Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md).
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+All contributions must comply with [NeoMINT Coding Practices](docs/neomint-coding-practices.md).
+
+---
+
+## ? License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Copyright ? 2025 MINT-RESEARCH
+
+---
+
+## ? Support
+
+- ? **Issues**: [GitHub Issues](https://github.com/data-mint-research/MINTutil/issues)
+- ? **Email**: mint-research@neomint.com
+- ? **Docs**: [Documentation](docs/)
+
+---
+
+<div align="center">
+
+**Built with ?? by MINT-RESEARCH**
+
+? Star us on GitHub if you find this useful!
+
+</div>
