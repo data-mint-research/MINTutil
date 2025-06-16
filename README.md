@@ -12,7 +12,11 @@
 ?ffnen Sie **PowerShell als Administrator** und f?hren Sie aus:
 
 ```powershell
+# Standard-Installation
 irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex
+
+# Mit Chocolatey Package Manager (empfohlen)
+irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex -UseChocolatey
 ```
 
 Das war's! ? Das Setup-Script installiert automatisch alle Abh?ngigkeiten und startet MINTutil.
@@ -28,6 +32,15 @@ Das automatische Setup installiert:
 - ? Alle Python-Abh?ngigkeiten
 - ? MINTutil nach `C:\MINTutil`
 - ? Desktop-Verkn?pfung
+- ? Optional: Chocolatey Package Manager
+
+### ? Warum Chocolatey?
+
+[Chocolatey](https://chocolatey.org/) ist wie apt-get f?r Windows:
+- Einfache Installation: `choco install python git ffmpeg -y`
+- Updates mit einem Befehl: `choco upgrade all -y`
+- ?ber 8000 verf?gbare Pakete
+- Keine manuelle Suche nach Downloads
 
 ## ? ?bersicht
 
@@ -42,6 +55,7 @@ MINTutil ist eine modulare Plattform f?r verschiedene Analyse- und Verarbeitungs
 - **? Lokale Verarbeitung**: Ihre Daten bleiben bei Ihnen
 - **?? Vielseitige Tools**: Von Transkription bis Datenanalyse
 - **? Docker-Support**: Einfaches Deployment
+- **? Chocolatey-Support**: Vereinfachtes Dependency Management
 
 ## ? Erste Schritte nach der Installation
 
@@ -107,6 +121,26 @@ docker-compose up -d
 
 # Oder mit dem Setup-Script
 irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex -UseDocker
+```
+</details>
+
+<details>
+<summary>? Installation mit Chocolatey</summary>
+
+```powershell
+# Chocolatey installieren (falls nicht vorhanden)
+Set-ExecutionPolicy Bypass -Scope Process -Force
+iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+# Dependencies mit Chocolatey installieren
+choco install python311 git ffmpeg -y
+
+# MINTutil installieren
+git clone https://github.com/data-mint-research/MINTutil.git C:\MINTutil
+cd C:\MINTutil
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 </details>
 
@@ -182,11 +216,26 @@ pylint streamlit_app tools
 # Manuell einzelne Komponenten installieren
 .\scripts\setup_windows.ps1 -SkipPython  # Wenn Python schon installiert
 .\scripts\setup_windows.ps1 -SkipGit     # Wenn Git schon installiert
+
+# Mit Chocolatey erzwingen
+.\scripts\setup_windows.ps1 -ForceChocolatey
 ```
 
 ### Health Check ausf?hren
 ```powershell
 C:\MINTutil\mint.ps1 doctor
+```
+
+### Software mit Chocolatey verwalten
+```powershell
+# Installierte Pakete anzeigen
+choco list --local-only
+
+# Alle Pakete updaten
+choco upgrade all -y
+
+# Spezifisches Paket updaten
+choco upgrade python311 -y
 ```
 
 ### Logs pr?fen
