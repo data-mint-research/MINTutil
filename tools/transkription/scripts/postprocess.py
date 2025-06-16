@@ -1,242 +1,353 @@
+#!/usr/bin/env python3
 """
-Post-processing module for creating formatted output
+Post-processing module for creating formatted output from transcripts
 """
+
+import re
 from pathlib import Path
 from datetime import datetime
-import re
-from urllib.parse import urlparse, parse_qs
+from typing import Optional, List, Dict, Any
+import json
+import textwrap
 
 
-def extract_video_info(url: str) -> dict:
+def extract_video_id(url: str) -> Optional[str]:
     """
-    Extract video information from YouTube URL
+    Extract video ID from YouTube URL
     
     Args:
-        url: YouTube video URL
-    
+        url: YouTube URL
+        
     Returns:
-        Dictionary with video information
+        Video ID or None
     """
-    parsed = urlparse(url)
-    video_id = None
+    patterns = [
+        r'(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n]+)',
+        r'youtube\.com\/embed\/([^&\n]+)',
+        r'youtube\.com\/v\/([^&\n]+)',
+    ]
     
-    # Extract video ID
-    if parsed.hostname in ['www.youtube.com', 'youtube.com']:
-        if parsed.path == '/watch':
-            video_id = parse_qs(parsed.query).get('v', [None])[0]
-    elif parsed.hostname == 'youtu.be':
-        video_id = parsed.path.lstrip('/')
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
     
-    return {
-        'url': url,
-        'video_id': video_id,
-        'embed_url': f'https://www.youtube.com/embed/{video_id}' if video_id else None
-    }
+    return None
 
 
-def format_transcript_as_markdown(text: str, video_info: dict = None) -> str:
+def format_timestamp(seconds: int) -> str:
     """
-    Format transcript as Markdown with metadata
+    Format seconds to HH:MM:SS
     
     Args:
-        text: Transcript text
-        video_info: Optional video information
-    
+        seconds: Time in seconds
+        
     Returns:
-        Formatted Markdown content
+        Formatted time string
     """
-    # Create header
-    header = f"# Transkript\n\n"
-    header += f"**Erstellt am:** {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = seconds % 60
     
-    if video_info:
-        header += "## Video Information\n\n"
-        if video_info.get('url'):
-            header += f"**Original URL:** {video_info['url']}\n\n"
-        if video_info.get('embed_url'):
-            header += f"**Video ID:** {video_info.get('video_id', 'Unknown')}\n\n"
-    
-    header += "---\n\n"
-    
-    # Format transcript text
-    # Split into paragraphs (assuming double newlines or long sentences)
-    paragraphs = split_into_paragraphs(text)
-    
-    formatted_text = "## Transkript\n\n"
-    for paragraph in paragraphs:
-        formatted_text += f"{paragraph}\n\n"
-    
-    # Add footer
-    footer = "\n---\n\n"
-    footer += "*Dieses Transkript wurde automatisch erstellt und kann Fehler enthalten.*\n"
-    
-    return header + formatted_text + footer
+    if hours > 0:
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    else:
+        return f"{minutes:02d}:{seconds:02d}"
 
 
-def split_into_paragraphs(text: str, min_length: int = 200) -> list:
+def clean_text(text: str) -> str:
     """
-    Split text into paragraphs based on sentence endings
+    Clean and format transcript text
     
     Args:
-        text: Input text
-        min_length: Minimum paragraph length
+        text: Raw transcript text
+        
+    Returns:
+        Cleaned text
+    """
+    # Remove multiple spaces
+    text = re.sub(r'\s+', ' ', text)
     
+    # Fix spacing around punctuation
+    text = re.sub(r'\s+([.,!?;:])', r'\1', text)
+    text = re.sub(r'([.,!?;:])\s*', r'\1 ', text)
+    
+    # Remove trailing spaces
+    text = text.strip()
+    
+    # Ensure sentences end with proper punctuation
+    if text and text[-1] not in '.!?':
+        text += '.'
+    
+    return text
+
+
+def split_into_paragraphs(text: str, words_per_paragraph: int = 100) -> List[str]:
+    """
+    Split text into paragraphs
+    
+    Args:
+        text: The text to split
+        words_per_paragraph: Approximate words per paragraph
+        
     Returns:
         List of paragraphs
     """
-    # Clean text
-    text = text.strip()
-    
-    # Split by sentence endings
     sentences = re.split(r'(?<=[.!?])\s+', text)
-    
     paragraphs = []
-    current_paragraph = ""
+    current_paragraph = []
+    current_word_count = 0
     
     for sentence in sentences:
-        current_paragraph += sentence + " "
+        word_count = len(sentence.split())
         
-        # Create new paragraph if long enough
-        if len(current_paragraph) >= min_length:
-            paragraphs.append(current_paragraph.strip())
-            current_paragraph = ""
+        if current_word_count + word_count > words_per_paragraph and current_paragraph:
+            paragraphs.append(' '.join(current_paragraph))
+            current_paragraph = [sentence]
+            current_word_count = word_count
+        else:
+            current_paragraph.append(sentence)
+            current_word_count += word_count
     
-    # Add remaining text
-    if current_paragraph.strip():
-        paragraphs.append(current_paragraph.strip())
+    if current_paragraph:
+        paragraphs.append(' '.join(current_paragraph))
     
     return paragraphs
 
 
-def add_timestamps(text: str, duration: float = None) -> str:
+def create_markdown_output(
+    transcript_path: str,
+    video_url: Optional[str] = None,
+    video_info: Optional[Dict[str, Any]] = None,
+    output_dir: Optional[str] = None
+) -> Optional[str]:
     """
-    Add estimated timestamps to transcript
-    
-    Args:
-        text: Transcript text
-        duration: Video duration in seconds
-    
-    Returns:
-        Text with timestamps
-    """
-    if not duration:
-        return text
-    
-    paragraphs = split_into_paragraphs(text)
-    total_chars = sum(len(p) for p in paragraphs)
-    
-    timestamped_text = ""
-    elapsed_chars = 0
-    
-    for paragraph in paragraphs:
-        # Estimate timestamp based on character position
-        timestamp_seconds = (elapsed_chars / total_chars) * duration
-        timestamp = format_timestamp(timestamp_seconds)
-        
-        timestamped_text += f"**[{timestamp}]** {paragraph}\n\n"
-        elapsed_chars += len(paragraph)
-    
-    return timestamped_text
-
-
-def format_timestamp(seconds: float) -> str:
-    """
-    Format seconds as MM:SS or HH:MM:SS
-    
-    Args:
-        seconds: Time in seconds
-    
-    Returns:
-        Formatted timestamp string
-    """
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    secs = int(seconds % 60)
-    
-    if hours > 0:
-        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
-    else:
-        return f"{minutes:02d}:{secs:02d}"
-
-
-def create_markdown_output(transcript_path: str, video_url: str = None) -> str:
-    """
-    Create formatted Markdown output from transcript
+    Create formatted markdown output from transcript
     
     Args:
         transcript_path: Path to transcript file
-        video_url: Optional YouTube video URL
-    
+        video_url: Original video URL
+        video_info: Video metadata
+        output_dir: Directory to save markdown file
+        
     Returns:
-        Path to Markdown file
+        Path to markdown file or None if failed
     """
     transcript_path = Path(transcript_path)
     
     if not transcript_path.exists():
-        raise FileNotFoundError(f"Transcript not found: {transcript_path}")
+        print(f"Error: Transcript file not found: {transcript_path}")
+        return None
     
-    # Read transcript
-    with open(transcript_path, 'r', encoding='utf-8') as f:
-        text = f.read()
-    
-    # Extract video info if URL provided
-    video_info = extract_video_info(video_url) if video_url else None
-    
-    # Format as Markdown
-    markdown_content = format_transcript_as_markdown(text, video_info)
-    
-    # Save Markdown file
-    output_path = transcript_path.with_suffix('.md')
-    
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(markdown_content)
-    
-    print(f"Markdown output saved to: {output_path}")
-    return str(output_path)
+    try:
+        # Read transcript
+        with open(transcript_path, 'r', encoding='utf-8') as f:
+            text = f.read()
+        
+        # Clean text
+        text = clean_text(text)
+        
+        # Create markdown content
+        md_lines = []
+        
+        # Header
+        title = "YouTube Transkript"
+        if video_info and 'title' in video_info:
+            title = video_info['title']
+        
+        md_lines.append(f"# {title}")
+        md_lines.append("")
+        
+        # Metadata
+        md_lines.append("---")
+        md_lines.append(f"**Erstellt am:** {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+        
+        if video_url:
+            md_lines.append(f"**Video URL:** {video_url}")
+            video_id = extract_video_id(video_url)
+            if video_id:
+                md_lines.append(f"**Video ID:** {video_id}")
+        
+        if video_info:
+            if 'uploader' in video_info:
+                md_lines.append(f"**Kanal:** {video_info['uploader']}")
+            if 'duration' in video_info:
+                duration = format_timestamp(video_info['duration'])
+                md_lines.append(f"**Dauer:** {duration}")
+            if 'view_count' in video_info:
+                views = f"{video_info['view_count']:,}".replace(',', '.')
+                md_lines.append(f"**Aufrufe:** {views}")
+        
+        md_lines.append("---")
+        md_lines.append("")
+        
+        # Table of contents
+        md_lines.append("## Inhalt")
+        md_lines.append("")
+        
+        # Split into paragraphs
+        paragraphs = split_into_paragraphs(text)
+        
+        # Add paragraphs with headers
+        for i, paragraph in enumerate(paragraphs, 1):
+            if len(paragraphs) > 1:
+                md_lines.append(f"### Teil {i}")
+                md_lines.append("")
+            
+            # Wrap long lines
+            wrapped = textwrap.fill(paragraph, width=80, break_long_words=False)
+            md_lines.append(wrapped)
+            md_lines.append("")
+        
+        # Statistics
+        md_lines.append("---")
+        md_lines.append("## Statistiken")
+        md_lines.append("")
+        word_count = len(text.split())
+        char_count = len(text)
+        md_lines.append(f"- **W?rter:** {word_count:,}".replace(',', '.'))
+        md_lines.append(f"- **Zeichen:** {char_count:,}".replace(',', '.'))
+        md_lines.append(f"- **Abs?tze:** {len(paragraphs)}")
+        
+        # Join lines
+        markdown_content = '\n'.join(md_lines)
+        
+        # Save markdown file
+        if output_dir is None:
+            output_dir = transcript_path.parent
+        
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if video_info and 'title' in video_info:
+            # Sanitize title for filename
+            safe_title = re.sub(r'[^\w\s-]', '', video_info['title'])
+            safe_title = re.sub(r'[-\s]+', '-', safe_title)[:50]
+            md_file = output_dir / f"{safe_title}_{timestamp}.md"
+        else:
+            md_file = output_dir / f"transcript_{timestamp}.md"
+        
+        with open(md_file, 'w', encoding='utf-8') as f:
+            f.write(markdown_content)
+        
+        print(f"Markdown file saved to: {md_file}")
+        return str(md_file)
+        
+    except Exception as e:
+        print(f"Error creating markdown: {e}")
+        return None
 
 
-def create_summary(text: str, max_sentences: int = 5) -> str:
+def create_srt_output(
+    segments_path: str,
+    output_dir: Optional[str] = None
+) -> Optional[str]:
     """
-    Create a simple summary of the transcript
+    Create SRT subtitle file from segments
     
     Args:
-        text: Transcript text
-        max_sentences: Maximum number of sentences in summary
-    
+        segments_path: Path to segments JSON file
+        output_dir: Directory to save SRT file
+        
     Returns:
-        Summary text
+        Path to SRT file or None if failed
     """
-    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    segments_path = Path(segments_path)
     
-    if len(sentences) <= max_sentences:
-        return text
+    if not segments_path.exists():
+        print(f"Error: Segments file not found: {segments_path}")
+        return None
     
-    # Simple extractive summary - take first and evenly distributed sentences
-    indices = [0]  # Always include first sentence
+    try:
+        # Load segments
+        with open(segments_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        if 'segments' not in data:
+            print("Error: No segments found in file")
+            return None
+        
+        segments = data['segments']
+        
+        # Create SRT content
+        srt_lines = []
+        
+        for i, segment in enumerate(segments, 1):
+            # Index
+            srt_lines.append(str(i))
+            
+            # Timestamps
+            start = format_srt_timestamp(segment['start'])
+            end = format_srt_timestamp(segment['end'])
+            srt_lines.append(f"{start} --> {end}")
+            
+            # Text
+            text = segment['text'].strip()
+            srt_lines.append(text)
+            srt_lines.append("")  # Empty line between entries
+        
+        srt_content = '\n'.join(srt_lines)
+        
+        # Save SRT file
+        if output_dir is None:
+            output_dir = segments_path.parent
+        
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        srt_file = output_dir / f"subtitles_{timestamp}.srt"
+        
+        with open(srt_file, 'w', encoding='utf-8') as f:
+            f.write(srt_content)
+        
+        print(f"SRT file saved to: {srt_file}")
+        return str(srt_file)
+        
+    except Exception as e:
+        print(f"Error creating SRT: {e}")
+        return None
+
+
+def format_srt_timestamp(seconds: float) -> str:
+    """
+    Format seconds to SRT timestamp format (HH:MM:SS,mmm)
     
-    if max_sentences > 1:
-        step = len(sentences) // (max_sentences - 1)
-        for i in range(1, max_sentences - 1):
-            indices.append(i * step)
-        indices.append(len(sentences) - 1)  # Include last sentence
+    Args:
+        seconds: Time in seconds
+        
+    Returns:
+        SRT formatted timestamp
+    """
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    millis = int((seconds % 1) * 1000)
     
-    summary_sentences = [sentences[i] for i in indices if i < len(sentences)]
+    return f"{hours:02d}:{minutes:02d}:{secs:02d},{millis:03d}"
+
+
+def main():
+    """Main function for CLI usage"""
+    import sys
     
-    return ' '.join(summary_sentences)
+    if len(sys.argv) < 2:
+        print("Usage: python postprocess.py <transcript_file> [video_url]")
+        sys.exit(1)
+    
+    transcript_file = sys.argv[1]
+    video_url = sys.argv[2] if len(sys.argv) > 2 else None
+    
+    result = create_markdown_output(transcript_file, video_url)
+    
+    if result:
+        print(f"\nSuccess! Markdown file: {result}")
+    else:
+        print("\nError: Failed to create markdown")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    # Example usage
-    import sys
-    
-    if len(sys.argv) > 1:
-        transcript_path = sys.argv[1]
-        video_url = sys.argv[2] if len(sys.argv) > 2 else None
-        
-        try:
-            markdown_path = create_markdown_output(transcript_path, video_url)
-            print(f"Success! Markdown at: {markdown_path}")
-        except Exception as e:
-            print(f"Error: {e}")
-    else:
-        print("Usage: python postprocess.py <transcript_path> [video_url]")
+    main()
