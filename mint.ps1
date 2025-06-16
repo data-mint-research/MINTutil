@@ -4,22 +4,21 @@
     MINTutil CLI - Zentrale Steuerungskonsole f?r modulare Infrastruktur-Tools
 .DESCRIPTION
     Haupteinstiegspunkt f?r MINTutil. Bietet Subkommandos f?r Initialisierung,
-    Start, Update und Systemdiagnose. Alle Benutzerinteraktionen erfolgen
-    ?ber klare Dialoge ohne implizite Annahmen.
+    Start, Update und Systemdiagnose. Unterst?tzt One-Click-Installation.
 .PARAMETER Command
-    Verf?gbare Kommandos: init, start, update, doctor, help
+    Verf?gbare Kommandos: install, init, start, stop, update, doctor, help
 .PARAMETER Args
     Zus?tzliche Argumente f?r das gew?hlte Kommando
 .EXAMPLE
-    .\mint.ps1 init
-    .\mint.ps1 start
-    .\mint.ps1 doctor -verbose
+    .\mint.ps1 install    # One-Click-Installation
+    .\mint.ps1 start      # MINTutil starten
+    .\mint.ps1 doctor     # System-Check
 #>
 
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('init', 'start', 'update', 'doctor', 'help', '')]
+    [ValidateSet('install', 'init', 'start', 'stop', 'update', 'doctor', 'help', '')]
     [string]$Command = '',
     
     [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
@@ -158,6 +157,29 @@ function Invoke-MintCommand {
     $exitCode = 0
     
     switch ($Command) {
+        'install' {
+            # One-Click-Installation
+            Write-Host "? Starte One-Click-Installation..." -ForegroundColor Green
+            Write-Host ""
+            
+            # Pr?fe ob bereits installiert
+            if (Test-Path "$script:MintUtilRoot\venv") {
+                Write-Host "? MINTutil ist bereits installiert!" -ForegroundColor Green
+                Write-Host "   Verwenden Sie 'mint start' zum Starten." -ForegroundColor DarkGray
+                $exitCode = 0
+            } else {
+                # F?hre Setup aus
+                $setupScript = Join-Path $script:ScriptsPath "setup_windows.ps1"
+                if (Test-Path $setupScript) {
+                    & $setupScript -InstallPath $script:MintUtilRoot @Arguments
+                    $exitCode = $LASTEXITCODE
+                } else {
+                    Write-Error "Setup-Script nicht gefunden. Bitte laden Sie MINTutil erneut herunter."
+                    $exitCode = 1
+                }
+            }
+        }
+        
         'init' {
             $scriptPath = Join-Path $script:ScriptsPath "init_project.ps1"
             if (Test-Path $scriptPath) {
@@ -172,16 +194,36 @@ function Invoke-MintCommand {
         }
         
         'start' {
-            $scriptPath = Join-Path $script:ScriptsPath "start_ui.ps1"
-            if (Test-Path $scriptPath) {
-                Write-Log "Starte Web-UI..." -Level INFO
-                & $scriptPath @Arguments
-                $exitCode = $LASTEXITCODE
-            } else {
-                Write-Log "Start-Skript nicht gefunden: $scriptPath" -Level ERROR
-                Write-Error "Start-Skript nicht gefunden: $scriptPath"
+            # Pr?fe ob Installation vollst?ndig
+            if (-not (Test-Path "$script:MintUtilRoot\venv")) {
+                Write-Host "??  MINTutil ist noch nicht installiert!" -ForegroundColor Yellow
+                Write-Host "   F?hren Sie zuerst 'mint install' aus." -ForegroundColor DarkGray
                 $exitCode = 1
+            } else {
+                $scriptPath = Join-Path $script:ScriptsPath "start_ui.ps1"
+                if (Test-Path $scriptPath) {
+                    Write-Log "Starte Web-UI..." -Level INFO
+                    & $scriptPath @Arguments
+                    $exitCode = $LASTEXITCODE
+                } else {
+                    Write-Log "Start-Skript nicht gefunden: $scriptPath" -Level ERROR
+                    Write-Error "Start-Skript nicht gefunden: $scriptPath"
+                    $exitCode = 1
+                }
             }
+        }
+        
+        'stop' {
+            Write-Host "? Stoppe MINTutil..." -ForegroundColor Yellow
+            # Finde Streamlit-Prozesse
+            $processes = Get-Process | Where-Object { $_.ProcessName -like "*streamlit*" -or $_.CommandLine -like "*streamlit*" }
+            if ($processes) {
+                $processes | Stop-Process -Force
+                Write-Host "? MINTutil wurde gestoppt." -ForegroundColor Green
+            } else {
+                Write-Host "??  MINTutil l?uft nicht." -ForegroundColor DarkGray
+            }
+            $exitCode = 0
         }
         
         'update' {
@@ -232,21 +274,25 @@ function Show-Help {
     Write-Host "Verwendung: .\mint.ps1 <command> [args]" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Verf?gbare Kommandos:" -ForegroundColor Green
-    Write-Host "  init      Initialisiert MINTutil (erstmalige Einrichtung)"
-    Write-Host "  start     Startet die MINTutil Web-Oberfl?che"
-    Write-Host "  update    Aktualisiert MINTutil-Komponenten"
-    Write-Host "  doctor    F?hrt Systemdiagnose durch"
-    Write-Host "  help      Zeigt diese Hilfe"
+    Write-Host "  install   ? One-Click-Installation (empfohlen f?r neue Nutzer)"
+    Write-Host "  start     ??  Startet die MINTutil Web-Oberfl?che"
+    Write-Host "  stop      ??  Stoppt MINTutil"
+    Write-Host "  doctor    ? F?hrt Systemdiagnose durch"
+    Write-Host "  update    ? Aktualisiert MINTutil-Komponenten"
+    Write-Host "  init      ? Initialisiert Projekt (f?r Entwickler)"
+    Write-Host "  help      ? Zeigt diese Hilfe"
     Write-Host ""
     Write-Host "Beispiele:" -ForegroundColor Green
-    Write-Host "  .\mint.ps1 init          # Erstmalige Einrichtung"
+    Write-Host "  .\mint.ps1 install       # Installiert MINTutil komplett"
     Write-Host "  .\mint.ps1 start         # Startet Web-UI"
     Write-Host "  .\mint.ps1 doctor        # Pr?ft Systemstatus"
-    Write-Host "  .\mint.ps1 update        # Aktualisiert Komponenten"
+    Write-Host ""
+    Write-Host "Quick Start:" -ForegroundColor Cyan
+    Write-Host "  Neu hier? F?hren Sie einfach aus: .\mint.ps1 install"
     Write-Host ""
     Write-Host "Weitere Informationen:" -ForegroundColor Blue
     Write-Host "  GitHub: https://github.com/data-mint-research/MINTutil"
-    Write-Host "  Docs:   https://github.com/data-mint-research/MINTutil/docs"
+    Write-Host "  Docs:   https://github.com/data-mint-research/MINTutil/wiki"
     Write-Host "  Logs:   $script:LogFile"
     
     Write-Log "Hilfe angezeigt" -Level INFO
@@ -265,7 +311,7 @@ try {
     # Pr?fe Voraussetzungen
     $prerequisites = Test-Prerequisites
     if ($prerequisites.Count -gt 0) {
-        Write-Host "?  Voraussetzungen nicht erf?llt:" -ForegroundColor Red
+        Write-Host "??  Voraussetzungen nicht erf?llt:" -ForegroundColor Red
         $prerequisites | ForEach-Object { Write-Host "   - $_" -ForegroundColor Red }
         Write-Log "Voraussetzungen nicht erf?llt. Beende mit Fehler." -Level ERROR
         exit 1
