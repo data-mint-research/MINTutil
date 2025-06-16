@@ -13,21 +13,50 @@ Diese Anleitung zeigt Ihnen, wie Sie MINTutil auf einem Windows-System installie
 ?ffnen Sie PowerShell als Administrator und f?hren Sie aus:
 
 ```powershell
-# Download und Ausf?hrung des Setup-Scripts
+# Standard-Installation
 irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex
+
+# Mit Chocolatey (empfohlen f?r einfachere Updates)
+irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex -UseChocolatey
+```
+
+## ? Was ist Chocolatey?
+
+[Chocolatey](https://chocolatey.org/) ist ein Package Manager f?r Windows (wie apt-get f?r Linux). Das Setup-Script kann Chocolatey automatisch installieren und nutzen, was folgende Vorteile bietet:
+
+- ? Einfachere Installation von Software
+- ? Automatische Updates mit `choco upgrade all`
+- ? ?ber 8000 verf?gbare Pakete
+- ? Keine manuelle Suche nach Download-Links
+
+### Chocolatey-Installation erzwingen:
+```powershell
+# Installiert definitiv Chocolatey und nutzt es f?r alle Pakete
+.\scripts\setup_windows.ps1 -ForceChocolatey
 ```
 
 ## ? Manuelle Installation (Schritt f?r Schritt)
 
 ### 1. Python installieren
 
-#### Option A: ?ber Microsoft Store (Empfohlen)
+#### Option A: Mit Chocolatey (empfohlen)
+```powershell
+# Chocolatey installieren (falls noch nicht vorhanden)
+Set-ExecutionPolicy Bypass -Scope Process -Force
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+# Python installieren
+choco install python311 -y
+```
+
+#### Option B: ?ber Microsoft Store
 1. ?ffnen Sie PowerShell
 2. Geben Sie ein: `python`
 3. Windows ?ffnet automatisch den Microsoft Store
 4. Klicken Sie auf "Installieren" bei Python 3.11
 
-#### Option B: Manueller Download
+#### Option C: Manueller Download
 ```powershell
 # Python Installer herunterladen
 Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.11.7/python-3.11.7-amd64.exe" -OutFile "$env:TEMP\python-installer.exe"
@@ -40,19 +69,28 @@ Start-Process -FilePath "$env:TEMP\python-installer.exe" -ArgumentList "/quiet",
 
 ### 2. Git installieren
 
+#### Mit Chocolatey:
+```powershell
+choco install git -y
+```
+
+#### Manuell:
 ```powershell
 # Git Installer herunterladen
 Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe" -OutFile "$env:TEMP\git-installer.exe"
 
 # Installation starten
 Start-Process -FilePath "$env:TEMP\git-installer.exe" -ArgumentList "/VERYSILENT", "/NORESTART" -Wait
-
-# PATH aktualisieren
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 ```
 
 ### 3. FFmpeg installieren (f?r Transkription)
 
+#### Mit Chocolatey:
+```powershell
+choco install ffmpeg -y
+```
+
+#### Manuell:
 ```powershell
 # FFmpeg herunterladen
 Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile "$env:TEMP\ffmpeg.zip"
@@ -109,14 +147,15 @@ streamlit run streamlit_app/main.py
 
 Falls Sie Docker bevorzugen:
 
-### 1. Docker Desktop installieren
+### 1. Docker Desktop mit Chocolatey installieren
 
 ```powershell
-# Docker Desktop Installer herunterladen
-Invoke-WebRequest -Uri "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe" -OutFile "$env:TEMP\docker-installer.exe"
+# Chocolatey installieren (falls nicht vorhanden)
+Set-ExecutionPolicy Bypass -Scope Process -Force
+iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
-# Installation starten
-Start-Process -FilePath "$env:TEMP\docker-installer.exe" -ArgumentList "install", "--quiet" -Wait
+# Docker Desktop installieren
+choco install docker-desktop -y
 
 # Neustart erforderlich!
 Restart-Computer
@@ -139,6 +178,10 @@ $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";"
 
 # Python-Pfad ?berpr?fen
 where.exe python
+
+# Oder mit Chocolatey neu installieren
+choco install python311 -y --force
+refreshenv
 ```
 
 ### Execution Policy Fehler
@@ -151,6 +194,9 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```powershell
 # pip manuell installieren
 python -m ensurepip --upgrade
+
+# Oder Python mit Chocolatey neu installieren
+choco install python311 -y --force
 ```
 
 ### SSL-Zertifikatsfehler
@@ -159,16 +205,31 @@ python -m ensurepip --upgrade
 pip config set global.trusted-host "pypi.org files.pythonhosted.org"
 ```
 
+### Chocolatey-Probleme
+```powershell
+# Chocolatey neu installieren
+Remove-Item -Path "$env:ChocolateyInstall" -Recurse -Force
+Set-ExecutionPolicy Bypass -Scope Process -Force
+iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+# Installierte Pakete anzeigen
+choco list --local-only
+
+# Alle Pakete updaten
+choco upgrade all -y
+```
+
 ## ? Verifikation
 
 Nach erfolgreicher Installation:
 
 ```powershell
 # Versionen pr?fen
-python --version  # Sollte Python 3.11.x zeigen
-pip --version     # Sollte pip 23.x zeigen
-git --version     # Sollte git version 2.x zeigen
-ffmpeg -version   # Sollte ffmpeg version zeigen
+python --version     # Sollte Python 3.11.x zeigen
+pip --version        # Sollte pip 23.x zeigen
+git --version        # Sollte git version 2.x zeigen
+ffmpeg -version      # Sollte ffmpeg version zeigen
+choco --version      # Sollte Chocolatey version zeigen (falls installiert)
 
 # MINTutil testen
 .\mint.ps1 doctor
@@ -187,6 +248,27 @@ $Shortcut.IconLocation = "C:\MINTutil\assets\icon.ico"
 $Shortcut.Save()
 ```
 
+## ? N?tzliche Chocolatey-Befehle
+
+Nach der Installation von Chocolatey k?nnen Sie weitere Software einfach installieren:
+
+```powershell
+# Weitere n?tzliche Tools
+choco install vscode -y           # Visual Studio Code
+choco install notepadplusplus -y  # Notepad++
+choco install 7zip -y             # 7-Zip
+choco install vlc -y              # VLC Media Player
+
+# Alle installierten Pakete updaten
+choco upgrade all -y
+
+# Paket suchen
+choco search <paketname>
+
+# Paket-Info anzeigen
+choco info <paketname>
+```
+
 ## ? Support
 
 Bei Problemen:
@@ -197,3 +279,5 @@ Bei Problemen:
 ## ? Fertig!
 
 MINTutil sollte jetzt unter http://localhost:8501 verf?gbar sein.
+
+**Tipp**: Mit Chocolatey installierte Software kann jederzeit mit `choco upgrade all -y` aktualisiert werden!
