@@ -406,7 +406,7 @@ try {
         $envPort = Get-PortFromEnv
         if ($envPort) {
             $Port = $envPort
-            Write-Host "   ??  Verwende Port aus .env: $Port" -ForegroundColor DarkGray
+            Write-Host "   ?  Verwende Port aus .env: $Port" -ForegroundColor DarkGray
         }
     }
     
@@ -419,7 +419,7 @@ try {
         try {
             $netstat = netstat -ano | Select-String ":$Port\s.*LISTENING"
             if ($netstat) {
-                Write-Host "   ??  Prozess auf Port $Port gefunden" -ForegroundColor DarkGray
+                Write-Host "   ?  Prozess auf Port $Port gefunden" -ForegroundColor DarkGray
                 Write-Log "Prozess auf Port $Port: $netstat" -Level DEBUG
             }
         } catch {
