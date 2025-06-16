@@ -1,17 +1,26 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    NeoMINT Compliance Checker - Prueft die Einhaltung der NeoMINT Coding Practices
+    NeoMINT Compliance Checker - Pr?ft die Einhaltung der NeoMINT Coding Practices
 .DESCRIPTION
-    Dieses Skript ueberprueft automatisch alle PowerShell- und Python-Dateien
-    im MINTutil-Projekt auf Einhaltung der NeoMINT Standards.
+    Dieses Skript ?berpr?ft automatisch alle PowerShell- und Python-Dateien
+    im MINTutil-Projekt auf Einhaltung der NeoMINT Standards v0.2.
+    Pr?ft Dateil?nge, Encoding, Namenskonventionen, Header und Dokumentation.
+.PARAMETER Verbose
+    Zeigt detaillierte Ausgabe w?hrend der Pr?fung
 .EXAMPLE
     .\check-neomint-compliance.ps1
+    F?hrt die Standard-Compliance-Pr?fung durch
+.EXAMPLE
     .\check-neomint-compliance.ps1 -Verbose
+    F?hrt die Pr?fung mit detaillierter Ausgabe durch
 .NOTES
-    Autor: MINTutil Team
-    Datum: 2025-06-16
-    Version: 1.0.0
+    Author: MINT-RESEARCH Team
+    Date: 2025-06-16
+    Version: 1.1.0
+    Dependencies: PowerShell 5.1+
+.LINK
+    https://github.com/data-mint-research/MINTutil/blob/main/docs/neomint-coding-practices.md
 #>
 
 [CmdletBinding()]
@@ -40,13 +49,13 @@ function Write-ComplianceLog {
 function Test-FileLength {
     <#
     .SYNOPSIS
-        Prueft ob Dateien die 500 LOC Grenze einhalten
+        Pr?ft ob Dateien die 500 LOC Grenze einhalten
     #>
     param([string]$Path)
     
     $lines = (Get-Content $Path | Measure-Object -Line).Lines
     if ($lines -gt 500) {
-        $script:Issues += "Datei ueberschreitet 500 LOC: $Path ($lines Zeilen)"
+        $script:Issues += "Datei ?berschreitet 500 LOC: $Path ($lines Zeilen)"
         return $false
     }
     return $true
@@ -55,22 +64,25 @@ function Test-FileLength {
 function Test-Encoding {
     <#
     .SYNOPSIS
-        Prueft ob Dateien keine Umlaute enthalten
+        Pr?ft ob Dateien korrektes UTF-8 Encoding verwenden
     #>
     param([string]$Path)
     
-    $content = Get-Content $Path -Raw
-    if ($content -match '[???????]') {
-        $script:Issues += "Datei enthaelt Umlaute: $Path"
+    try {
+        # Teste ob die Datei korrekt als UTF-8 gelesen werden kann
+        $content = Get-Content $Path -Raw -Encoding UTF8
+        return $true
+    }
+    catch {
+        $script:Issues += "Datei hat Encoding-Probleme: $Path"
         return $false
     }
-    return $true
 }
 
 function Test-FunctionNaming {
     <#
     .SYNOPSIS
-        Prueft PowerShell Funktionsnamen auf PascalCase
+        Pr?ft PowerShell Funktionsnamen auf PascalCase
     #>
     param([string]$Path)
     
@@ -92,7 +104,7 @@ function Test-FunctionNaming {
 function Test-FileNaming {
     <#
     .SYNOPSIS
-        Prueft Dateinamen auf kebab-case
+        Pr?ft Dateinamen auf kebab-case
     #>
     param([string]$Path)
     
@@ -114,15 +126,28 @@ function Test-FileNaming {
 function Test-Header {
     <#
     .SYNOPSIS
-        Prueft ob PS1-Dateien einen vollstaendigen Header haben
+        Pr?ft ob Skript-Dateien einen vollst?ndigen Metadata-Block haben
     #>
     param([string]$Path)
     
-    if ($Path -notlike "*.ps1") { return $true }
+    $extension = [System.IO.Path]::GetExtension($Path)
     
-    $content = Get-Content $Path -Raw
-    if ($content -notmatch '\.NOTES[\s\S]*?Autor:[\s\S]*?Datum:') {
-        $script:Warnings += "Unvollstaendiger Header in: $Path"
+    switch ($extension) {
+        '.ps1' {
+            $content = Get-Content $Path -Raw
+            # Pr?fe auf PowerShell Metadata Block
+            if ($content -notmatch '<#[\s\S]*?\.SYNOPSIS[\s\S]*?\.NOTES[\s\S]*?Author:[\s\S]*?Date:[\s\S]*?Version:[\s\S]*?#>') {
+                $script:Issues += "Unvollst?ndiger oder fehlender Metadata-Block in: $Path"
+                return $false
+            }
+        }
+        '.py' {
+            $content = Get-Content $Path -Raw
+            # Pr?fe auf Python Docstring
+            if ($content -notmatch '"""[\s\S]*?Author:[\s\S]*?Date:[\s\S]*?Version:[\s\S]*?"""') {
+                $script:Warnings += "Unvollst?ndiger oder fehlender Docstring in: $Path"
+            }
+        }
     }
     return $true
 }
@@ -130,7 +155,7 @@ function Test-Header {
 function Test-LoggingUsage {
     <#
     .SYNOPSIS
-        Prueft ob Write-Log verwendet wird
+        Pr?ft ob Write-Log verwendet wird
     #>
     param([string]$Path)
     
@@ -147,10 +172,51 @@ function Test-LoggingUsage {
     return $true
 }
 
+function Test-Comments {
+    <#
+    .SYNOPSIS
+        Pr?ft ob komplexe Logik kommentiert ist
+    #>
+    param([string]$Path)
+    
+    $content = Get-Content $Path -Raw
+    
+    # Suche nach potentiell komplexer Logik ohne Kommentare
+    $complexPatterns = @(
+        # Verschachtelte Schleifen ohne Kommentar
+        'for\s*\([^)]+\)\s*{\s*for\s*\(',
+        'foreach\s*\([^)]+\)\s*{\s*foreach\s*\(',
+        'while\s*\([^)]+\)\s*{\s*while\s*\(',
+        # Regex ohne Kommentar
+        '\[regex\]::',
+        # Komplexe Berechnungen
+        '\$\w+\s*=\s*[^;]+[+\-*/]{2,}'
+    )
+    
+    foreach ($pattern in $complexPatterns) {
+        if ($content -match $pattern) {
+            # Pr?fe ob ein Kommentar in der N?he ist (3 Zeilen vor oder nach)
+            $matches = [regex]::Matches($content, $pattern)
+            foreach ($match in $matches) {
+                $startIndex = $match.Index
+                $contextStart = [Math]::Max(0, $startIndex - 200)
+                $contextEnd = [Math]::Min($content.Length, $startIndex + 200)
+                $context = $content.Substring($contextStart, $contextEnd - $contextStart)
+                
+                if ($context -notmatch '#|//|/\*') {
+                    $script:Warnings += "Komplexe Logik ohne Kommentar gefunden in: $Path"
+                    break
+                }
+            }
+        }
+    }
+    return $true
+}
+
 function Test-GitIgnore {
     <#
     .SYNOPSIS
-        Prueft ob .gitignore wichtige Eintraege enthaelt
+        Pr?ft ob .gitignore wichtige Eintr?ge enth?lt
     #>
     
     $gitignorePath = Join-Path $script:ProjectRoot ".gitignore"
@@ -173,7 +239,7 @@ function Test-GitIgnore {
 function Test-Documentation {
     <#
     .SYNOPSIS
-        Prueft ob wichtige Dokumentation vorhanden ist
+        Pr?ft ob wichtige Dokumentation vorhanden ist
     #>
     
     $requiredDocs = @(
@@ -190,35 +256,57 @@ function Test-Documentation {
     return $true
 }
 
+function Test-TODOs {
+    <#
+    .SYNOPSIS
+        Pr?ft ob TODOs konkret und nachvollziehbar sind
+    #>
+    param([string]$Path)
+    
+    $content = Get-Content $Path -Raw
+    $todos = [regex]::Matches($content, 'TODO:?\s*(.+)')
+    
+    foreach ($match in $todos) {
+        $todoText = $match.Groups[1].Value.Trim()
+        # Ein guter TODO sollte mindestens 10 Zeichen lang sein und beschreibend
+        if ($todoText.Length -lt 10 -or $todoText -match '^(fix|implement|add|update)$') {
+            $script:Warnings += "Unkonkreter TODO gefunden in $Path : '$todoText'"
+        }
+    }
+    return $true
+}
+
 # Hauptprogramm
 Write-Host ""
-Write-Host "=== NeoMINT Compliance Check ===" -ForegroundColor Cyan
+Write-Host "=== NeoMINT Compliance Check v1.1 ===" -ForegroundColor Cyan
 Write-Host ""
 
-# Sammle alle zu pruefenden Dateien
+# Sammle alle zu pr?fenden Dateien
 $psFiles = Get-ChildItem -Path $script:ProjectRoot -Filter "*.ps1" -Recurse -File | Where-Object { $_.FullName -notmatch 'venv|\.git|node_modules' }
 $pyFiles = Get-ChildItem -Path $script:ProjectRoot -Filter "*.py" -Recurse -File | Where-Object { $_.FullName -notmatch 'venv|\.git|node_modules' }
 $allFiles = $psFiles + $pyFiles
 
-Write-ComplianceLog "Pruefe $($allFiles.Count) Dateien..." -Level INFO
+Write-ComplianceLog "Pr?fe $($allFiles.Count) Dateien..." -Level INFO
 
-# Pruefe jede Datei
+# Pr?fe jede Datei
 foreach ($file in $allFiles) {
     $relativePath = $file.FullName.Replace($script:ProjectRoot, '').TrimStart('\', '/')
-    Write-Verbose "Pruefe: $relativePath"
+    Write-Verbose "Pr?fe: $relativePath"
     
-    # Alle Tests durchfuehren
+    # Alle Tests durchf?hren
     $tests = @(
         (Test-FileLength -Path $file.FullName),
         (Test-Encoding -Path $file.FullName),
         (Test-FunctionNaming -Path $file.FullName),
         (Test-FileNaming -Path $file.FullName),
         (Test-Header -Path $file.FullName),
-        (Test-LoggingUsage -Path $file.FullName)
+        (Test-LoggingUsage -Path $file.FullName),
+        (Test-Comments -Path $file.FullName),
+        (Test-TODOs -Path $file.FullName)
     )
 }
 
-# Pruefe projektweite Anforderungen
+# Pr?fe projektweite Anforderungen
 Test-GitIgnore | Out-Null
 Test-Documentation | Out-Null
 
@@ -227,7 +315,7 @@ Write-Host ""
 Write-Host "=== Ergebnis ===" -ForegroundColor Cyan
 
 if ($script:Issues.Count -eq 0) {
-    Write-ComplianceLog "Alle kritischen Pruefungen bestanden!" -Level SUCCESS
+    Write-ComplianceLog "Alle kritischen Pr?fungen bestanden!" -Level SUCCESS
 } else {
     Write-Host ""
     Write-Host "Kritische Probleme gefunden:" -ForegroundColor Red
