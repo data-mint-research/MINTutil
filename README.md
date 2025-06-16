@@ -2,38 +2,32 @@
 
 ![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Status](https://img.shields.io/badge/status-development-yellow.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)
 
 ? **MINTutil** - Modulare, intelligente Netzwerk-Tools f?r Utility und Analyse
 
-## ?? WICHTIGER SICHERHEITSHINWEIS
+## ? Installation in 30 Sekunden
 
-**NIEMALS** die `.env` Datei ins Repository committen! Diese enth?lt sensible Konfigurationsdaten wie API-Keys und Passw?rter.
+?ffnen Sie **PowerShell als Administrator** und f?hren Sie aus:
 
-### Erste Einrichtung:
-```bash
-# Kopieren Sie die Beispiel-Konfiguration
-cp .env.example .env
-
-# Bearbeiten Sie die .env mit Ihren eigenen Werten
-# WICHTIG: Ersetzen Sie alle Platzhalter-Werte!
+```powershell
+irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex
 ```
 
-### Falls Sie versehentlich Secrets committed haben:
-1. ?ndern Sie SOFORT alle betroffenen API-Keys und Passw?rter
-2. Entfernen Sie die Datei aus der Git-Historie (siehe unten)
-3. F?gen Sie die Datei zu .gitignore hinzu
+Das war's! ? Das Setup-Script installiert automatisch alle Abh?ngigkeiten und startet MINTutil.
 
-### Git-Historie bereinigen:
-```bash
-# WARNUNG: Dies ?ndert die Git-Historie!
-git filter-branch --force --index-filter \
-  "git rm --cached --ignore-unmatch .env" \
-  --prune-empty --tag-name-filter cat -- --all
+> **Hinweis**: F?r Linux/macOS oder erweiterte Installationsoptionen siehe [Erweiterte Installation](#-erweiterte-installation).
 
-# Force push (koordinieren Sie sich mit anderen Entwicklern!)
-git push origin --force --all
-```
+## ? Was wird installiert?
+
+Das automatische Setup installiert:
+- ? Python 3.11 (falls nicht vorhanden)
+- ? Git (falls nicht vorhanden)
+- ? FFmpeg (f?r Transkriptionen)
+- ? Alle Python-Abh?ngigkeiten
+- ? MINTutil nach `C:\MINTutil`
+- ? Desktop-Verkn?pfung
 
 ## ? ?bersicht
 
@@ -41,117 +35,111 @@ MINTutil ist eine modulare Plattform f?r verschiedene Analyse- und Verarbeitungs
 
 ## ? Features
 
+- **? Ein-Klick-Installation**: Vollautomatisches Setup f?r Windows
 - **? Modulare Architektur**: Einfaches Hinzuf?gen neuer Tools
 - **? KI-Integration**: Optionale Unterst?tzung durch Ollama
 - **? Web-Interface**: Moderne Streamlit-UI
 - **? Lokale Verarbeitung**: Ihre Daten bleiben bei Ihnen
-- **? Vielseitige Tools**: Von Transkription bis Datenanalyse
+- **?? Vielseitige Tools**: Von Transkription bis Datenanalyse
 - **? Docker-Support**: Einfaches Deployment
 
-## ? Schnellstart
+## ? Erste Schritte nach der Installation
 
-### Voraussetzungen
+1. **MINTutil starten**:
+   - Doppelklick auf die Desktop-Verkn?pfung, oder
+   - PowerShell: `C:\MINTutil\mint.ps1 start`
 
-- Python 3.9 oder h?her
-- PowerShell 5.1+ (Windows) oder bash (Linux/Mac)
-- Git
-- Optional: Docker & Docker Compose
+2. **Browser ?ffnet sich automatisch** bei `http://localhost:8501`
 
-### Installation
+3. **Tool ausw?hlen** aus der Sidebar und loslegen!
 
-1. **Repository klonen**
-   ```bash
-   git clone https://github.com/data-mint-research/MINTutil.git
-   cd MINTutil
-   ```
+## ?? Verf?gbare Tools
 
-2. **Umgebung einrichten**
-   ```bash
-   # Windows
-   .\mint.ps1 init
-   
-   # Linux/Mac
-   ./mint.sh init
-   ```
-
-3. **Konfiguration anpassen**
-   ```bash
-   cp .env.example .env
-   # Bearbeiten Sie .env mit Ihren Einstellungen
-   ```
-
-4. **Anwendung starten**
-   ```bash
-   # Windows
-   .\mint.ps1 start
-   
-   # Linux/Mac
-   ./mint.sh start
-   ```
-
-5. **Browser ?ffnen**
-   
-   Navigieren Sie zu: `http://localhost:8501`
-
-## ? Verf?gbare Tools
-
-### ? Transkription
-- YouTube-Videos transkribieren
+### ?? Transkription
+- YouTube-Videos transkribieren mit OpenAI Whisper
 - Lokale Audio/Video-Dateien verarbeiten
-- Automatische Textnachbearbeitung
+- Automatische Namenskorrektur mit Glossar
+- Export als Markdown
 
-### ? Datenanalyse (geplant)
-- CSV/Excel-Verarbeitung
-- Datenvisualisierung
-- Statistische Auswertungen
+### ? Weitere Tools (in Entwicklung)
+- Datenanalyse und Visualisierung
+- Netzwerk-Utilities
+- API-Testing Tools
+- Und mehr...
 
-### ? Weitere Tools
-- Erweiterbar durch Plugin-System
-- Eigene Tools einfach integrierbar
+## ? Sicherheitshinweis
 
-## ? Projektstruktur
+**WICHTIG**: Die `.env` Datei enth?lt sensible Daten und darf **niemals** ins Repository committed werden!
+
+Nach der Installation:
+```powershell
+# Konfiguration anpassen
+notepad C:\MINTutil\.env
+```
+
+## ? Erweiterte Installation
+
+<details>
+<summary>? Linux/macOS Installation</summary>
+
+```bash
+# Automatisches Setup-Script (in Entwicklung)
+curl -sSL https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_unix.sh | bash
+
+# Oder manuell:
+git clone https://github.com/data-mint-research/MINTutil.git
+cd MINTutil
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+streamlit run streamlit_app/main.py
+```
+</details>
+
+<details>
+<summary>? Docker Installation</summary>
+
+```bash
+# Mit Docker Compose
+git clone https://github.com/data-mint-research/MINTutil.git
+cd MINTutil
+docker-compose up -d
+
+# Oder mit dem Setup-Script
+irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex -UseDocker
+```
+</details>
+
+<details>
+<summary>??? Entwickler-Installation</summary>
+
+```bash
+# Repository klonen
+git clone https://github.com/data-mint-research/MINTutil.git
+cd MINTutil
+
+# Development-Umgebung
+python -m venv venv
+.\venv\Scripts\Activate.ps1  # Windows
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
+# Pre-commit hooks
+pre-commit install
+```
+</details>
+
+## ?? Projektstruktur
 
 ```
 MINTutil/
 ??? streamlit_app/      # Haupt-UI Anwendung
 ??? tools/              # Modulare Tools
 ?   ??? transkription/  # Transkriptions-Tool
-??? scripts/            # Utility-Scripts
+??? scripts/            # Setup & Utility-Scripts
 ??? config/             # Konfigurationsdateien
 ??? tests/              # Test-Suite
 ??? docs/               # Dokumentation
-```
-
-## ? Verwendung
-
-### Health Check durchf?hren
-```bash
-# Vollst?ndiger System-Check
-.\mint.ps1 check
-
-# Nur bestimmte Bereiche pr?fen
-.\mint.ps1 check -Mode minimal
-```
-
-### Logs anzeigen
-```bash
-# Aktuelle Logs
-.\mint.ps1 logs
-
-# Logs verfolgen
-.\mint.ps1 logs -f
-```
-
-### Docker-Deployment
-```bash
-# Container erstellen und starten
-docker-compose up -d
-
-# Status pr?fen
-docker-compose ps
-
-# Logs anzeigen
-docker-compose logs -f
 ```
 
 ## ? Entwicklung
@@ -159,67 +147,78 @@ docker-compose logs -f
 ### Neues Tool hinzuf?gen
 
 1. Erstellen Sie einen Ordner unter `tools/`
-2. Implementieren Sie `__init__.py` mit Tool-Metadaten
-3. Erstellen Sie `ui.py` mit Streamlit-Interface
-4. Registrierung erfolgt automatisch
+2. Implementieren Sie `tool.meta.yaml` mit Metadaten
+3. Erstellen Sie `ui.py` mit `render()` Funktion
+4. Tool erscheint automatisch in der UI
+
+Beispiel-Struktur:
+```
+tools/
+??? mein_tool/
+    ??? tool.meta.yaml
+    ??? ui.py
+    ??? scripts/
+```
 
 ### Tests ausf?hren
 ```bash
-python -m pytest tests/
+pytest tests/ -v
 ```
 
-### Code-Stil
+### Code-Qualit?t
 ```bash
-# Formatierung pr?fen
-black --check .
+# Formatierung
+black .
 
 # Linting
+flake8 .
 pylint streamlit_app tools
-```
-
-## ? Konfiguration
-
-### Umgebungsvariablen (.env)
-
-```env
-# Basis-Konfiguration
-APP_NAME=MINTutil
-APP_VERSION=0.1.0
-ENVIRONMENT=development
-
-# Streamlit
-STREAMLIT_SERVER_PORT=8501
-STREAMLIT_SERVER_ADDRESS=0.0.0.0
-
-# KI-Features (optional)
-ENABLE_AI_FEATURES=false
-OLLAMA_BASE_URL=http://localhost:11434
 ```
 
 ## ? Fehlerbehebung
 
+### Automatisches Setup schl?gt fehl
+```powershell
+# Manuell einzelne Komponenten installieren
+.\scripts\setup_windows.ps1 -SkipPython  # Wenn Python schon installiert
+.\scripts\setup_windows.ps1 -SkipGit     # Wenn Git schon installiert
+```
+
+### Health Check ausf?hren
+```powershell
+C:\MINTutil\mint.ps1 doctor
+```
+
+### Logs pr?fen
+```powershell
+Get-Content C:\MINTutil\logs\mintutil-cli.log -Tail 50
+```
+
 ### H?ufige Probleme
 
-1. **Port bereits belegt**
-   ```bash
-   # Windows: Prozess finden
-   netstat -ano | findstr :8501
-   
-   # Prozess beenden oder anderen Port in .env setzen
-   ```
+<details>
+<summary>Port 8501 bereits belegt</summary>
 
-2. **Module nicht gefunden**
-   ```bash
-   # Virtuelle Umgebung aktivieren
-   .\venv\Scripts\Activate.ps1
-   
-   # Requirements neu installieren
-   pip install -r requirements.txt
-   ```
+```powershell
+# Prozess finden
+netstat -ano | findstr :8501
 
-3. **Encoding-Probleme**
-   - Stelle sicher, dass alle Dateien UTF-8 kodiert sind
-   - Verwende `chcp 65001` in der Windows-Konsole
+# In .env anderen Port setzen
+STREAMLIT_SERVER_PORT=8502
+```
+</details>
+
+<details>
+<summary>Module nicht gefunden</summary>
+
+```powershell
+# Virtual Environment aktivieren
+C:\MINTutil\venv\Scripts\Activate.ps1
+
+# Requirements neu installieren
+pip install -r requirements.txt --force-reinstall
+```
+</details>
 
 ## ? Lizenz
 
@@ -241,10 +240,12 @@ Beitr?ge sind willkommen! Bitte beachten Sie:
 
 - ? Email: mint-research@neomint.com
 - ? Discord: [MINTutil Community](https://discord.gg/mintutil)
-- ? Dokumentation: [docs.mintutil.dev](https://docs.mintutil.dev)
+- ? Wiki: [GitHub Wiki](https://github.com/data-mint-research/MINTutil/wiki)
+- ? Issues: [GitHub Issues](https://github.com/data-mint-research/MINTutil/issues)
 
 ---
 
 <p align="center">
-  Made with ?? by MINT-RESEARCH
+  <strong>MINTutil</strong> - Made with ?? by MINT-RESEARCH<br>
+  <sub>Stern ? uns auf GitHub wenn es dir gef?llt!</sub>
 </p>
