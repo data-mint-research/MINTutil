@@ -1,82 +1,41 @@
-#Requires -Version 5.1
-<#
-.SYNOPSIS
-    MINTutil System Health Check (Doctor)
-.DESCRIPTION
-    F?hrt umfassende Systemdiagnose durch:
-    - Systemvoraussetzungen
-    - Konfigurationspr?fung  
-    - Netzwerk und Ports
-    - Dependencies
-    - Container-Status
-    - Log-Analyse
-#>
+# MINTutil System Health Check - Aktualisierte Version
+# Verwendet modulare Struktur f?r bessere Wartbarkeit
 
-[CmdletBinding()]
+#Requires -Version 5.1
+
 param(
     [ValidateSet('quick', 'full', 'network', 'dependencies', 'logs')]
     [string]$Mode = 'quick',
     [switch]$Fix,
     [switch]$Export,
-    [switch]$Verbose
+    [switch]$Verbose,
+    [switch]$Silent = $false,
+    [switch]$AutoFix = $false
 )
 
-# Strikte Fehlerbehandlung
-$ErrorActionPreference = 'Continue' # F?r Diagnose fortfahren bei Fehlern
+# Exit-Codes
+$EXIT_SUCCESS = 0
+$EXIT_ERROR = 1
+$EXIT_CRITICAL = 2
 
 # Globale Variablen
 $script:MintUtilRoot = Split-Path $PSScriptRoot -Parent
+$script:hasErrors = $false
+$script:hasCriticalErrors = $false
 $script:Issues = @()
 $script:Warnings = @()
 $script:Info = @()
 $script:ReportFile = Join-Path $script:MintUtilRoot "logs\health_report_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
 
-function Add-Issue {
-    param(
-        [string]$Category,
-        [string]$Message,
-        [string]$Solution = ""
-    )
-    $script:Issues += [PSCustomObject]@{
-        Category = $Category
-        Message = $Message
-        Solution = $Solution
-        Severity = "Error"
-    }
-}
+# Module laden
+$modulePath = $PSScriptRoot
+. "$modulePath\health_check_logging.ps1"
+. "$modulePath\health_check_requirements.ps1"
+. "$modulePath\health_check_environment.ps1"
 
-function Add-Warning {
-    param(
-        [string]$Category,
-        [string]$Message,
-        [string]$Solution = ""
-    )
-    $script:Warnings += [PSCustomObject]@{
-        Category = $Category
-        Message = $Message
-        Solution = $Solution
-        Severity = "Warning"
-    }
-}
-
-function Add-Info {
-    param(
-        [string]$Category,
-        [string]$Message
-    )
-    $script:Info += [PSCustomObject]@{
-        Category = $Category
-        Message = $Message
-        Severity = "Info"
-    }
-}
-
+# System-Info (Legacy)
 function Test-SystemInfo {
-    <#
-    .SYNOPSIS
-        Sammelt Systeminformationen
-    #>
-    Write-Host "??  System-Informationen" -ForegroundColor Cyan
+    Write-Header "System-Informationen"
     
     # OS Info
     $os = Get-CimInstance Win32_OperatingSystem
@@ -104,182 +63,11 @@ function Test-SystemInfo {
     }
 }
 
-function Test-CoreRequirements {
-    <#
-    .SYNOPSIS
-        Pr?ft Kernvoraussetzungen
-    #>
-    Write-Host "`n? Kernvoraussetzungen" -ForegroundColor Cyan
-    
-    # Python
-    $pythonVersion = python --version 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        if ($pythonVersion -match "Python (\d+)\.(\d+)") {
-            $major = [int]$Matches[1]
-            $minor = [int]$Matches[2]
-            if ($major -ge 3 -and $minor -ge 9) {
-                Add-Info "Requirements" "Python: $pythonVersion ?"
-            } else {
-                Add-Issue "Requirements" "Python Version zu alt: $pythonVersion" "Python 3.9+ installieren"
-            }
-        }
-    } else {
-        Add-Issue "Requirements" "Python nicht gefunden" "Python 3.9+ installieren"
-    }
-    
-    # Git
-    $gitVersion = git --version 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        Add-Info "Requirements" "Git: $gitVersion ?"
-    } else {
-        Add-Issue "Requirements" "Git nicht gefunden" "Git installieren"
-    }
-    
-    # Docker (optional)
-    $dockerVersion = docker --version 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        Add-Info "Requirements" "Docker: $dockerVersion ?"
-        
-        # Docker l?uft?
-        $dockerPs = docker ps 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            Add-Warning "Requirements" "Docker-Daemon l?uft nicht" "Docker Desktop starten"
-        }
-    } else {
-        Add-Warning "Requirements" "Docker nicht installiert (optional)" "Docker Desktop installieren f?r Container-Support"
-    }
-}
-
-function Test-Configuration {
-    <#
-    .SYNOPSIS
-        Pr?ft Konfigurationsdateien
-    #>
-    Write-Host "`n??  Konfiguration" -ForegroundColor Cyan
-    
-    # .env Datei
-    $envFile = Join-Path $script:MintUtilRoot ".env"
-    if (Test-Path $envFile) {
-        Add-Info "Config" ".env Datei vorhanden ?"
-        
-        # Pr?fe wichtige Variablen
-        $envContent = Get-Content $envFile
-        $requiredVars = @(
-            "APP_NAME",
-            "STREAMLIT_SERVER_PORT",
-            "LOG_LEVEL"
-        )
-        
-        foreach ($var in $requiredVars) {
-            if ($envContent -match "^$var=") {
-                Add-Info "Config" "$var definiert ?"
-            } else {
-                Add-Warning "Config" "$var nicht in .env definiert" "Variable in .env erg?nzen"
-            }
-        }
-    } else {
-        Add-Issue "Config" ".env Datei fehlt" "F?hren Sie '.\mint.ps1 init' aus"
-    }
-    
-    # Verzeichnisstruktur
-    $requiredDirs = @("tools", "scripts", "streamlit_app", "logs", "data")
-    foreach ($dir in $requiredDirs) {
-        $path = Join-Path $script:MintUtilRoot $dir
-        if (Test-Path $path) {
-            Add-Info "Config" "Verzeichnis $dir vorhanden ?"
-        } else {
-            Add-Issue "Config" "Verzeichnis $dir fehlt" "F?hren Sie '.\mint.ps1 init' aus"
-        }
-    }
-}
-
-function Test-Dependencies {
-    <#
-    .SYNOPSIS
-        Pr?ft Python-Dependencies
-    #>
-    if ($Mode -eq 'quick') { return }
-    
-    Write-Host "`n? Dependencies" -ForegroundColor Cyan
-    
-    # Aktiviere venv wenn vorhanden
-    $venvPath = Join-Path $script:MintUtilRoot "venv"
-    $activateScript = Join-Path $venvPath "Scripts\Activate.ps1"
-    if (Test-Path $activateScript) {
-        & $activateScript
-    }
-    
-    # Pr?fe wichtige Packages
-    $packages = @("streamlit", "pandas", "python-dotenv")
-    foreach ($package in $packages) {
-        $pkgInfo = pip show $package 2>&1
-        if ($LASTEXITCODE -eq 0) {
-            if ($pkgInfo -match "Version: (.+)") {
-                Add-Info "Dependencies" "$package $($Matches[1]) ?"
-            }
-        } else {
-            Add-Issue "Dependencies" "Package $package nicht installiert" "pip install $package"
-        }
-    }
-    
-    # Outdated packages
-    if ($Mode -eq 'full') {
-        Write-Host "   Pr?fe auf Updates..." -ForegroundColor DarkGray
-        $outdated = pip list --outdated --format=json | ConvertFrom-Json
-        if ($outdated.Count -gt 0) {
-            Add-Warning "Dependencies" "$($outdated.Count) Packages haben Updates verf?gbar" "F?hren Sie '.\mint.ps1 update' aus"
-        }
-    }
-}
-
-function Test-Network {
-    <#
-    .SYNOPSIS
-        Pr?ft Netzwerk und Ports
-    #>
-    if ($Mode -ne 'full' -and $Mode -ne 'network') { return }
-    
-    Write-Host "`n? Netzwerk" -ForegroundColor Cyan
-    
-    # Streamlit Port
-    $streamlitPort = 8501
-    $envFile = Join-Path $script:MintUtilRoot ".env"
-    if (Test-Path $envFile) {
-        $envContent = Get-Content $envFile | Where-Object { $_ -match "STREAMLIT_SERVER_PORT=(\d+)" }
-        if ($Matches[1]) {
-            $streamlitPort = [int]$Matches[1]
-        }
-    }
-    
-    # Port-Verf?gbarkeit
-    try {
-        $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Any, $streamlitPort)
-        $listener.Start()
-        $listener.Stop()
-        Add-Info "Network" "Port $streamlitPort verf?gbar ?"
-    } catch {
-        Add-Warning "Network" "Port $streamlitPort belegt" "Anderen Port in .env konfigurieren oder Prozess beenden"
-    }
-    
-    # Internet-Verbindung
-    try {
-        $response = Invoke-WebRequest -Uri "https://api.github.com" -TimeoutSec 5 -UseBasicParsing
-        if ($response.StatusCode -eq 200) {
-            Add-Info "Network" "Internet-Verbindung OK ?"
-        }
-    } catch {
-        Add-Warning "Network" "Keine Internet-Verbindung" "Netzwerkverbindung pr?fen"
-    }
-}
-
+# Log-Analyse
 function Test-Logs {
-    <#
-    .SYNOPSIS
-        Analysiert Log-Dateien
-    #>
     if ($Mode -ne 'full' -and $Mode -ne 'logs') { return }
     
-    Write-Host "`n? Log-Analyse" -ForegroundColor Cyan
+    Write-Header "Log-Analyse"
     
     $logsDir = Join-Path $script:MintUtilRoot "logs"
     if (-not (Test-Path $logsDir)) {
@@ -302,33 +90,77 @@ function Test-Logs {
     }
 }
 
-function Show-Report {
-    <#
-    .SYNOPSIS
-        Zeigt den Diagnose-Report
-    #>
-    Write-Host "`n" -NoNewline
-    Write-Host "?" * 50 -ForegroundColor Blue
-    Write-Host "? MINTutil Health Report" -ForegroundColor Blue
-    Write-Host "?" * 50 -ForegroundColor Blue
+# Zusammenfassung anzeigen
+function Show-Summary {
+    Write-Header "Zusammenfassung"
     
-    # Zusammenfassung
+    if ($script:hasCriticalErrors) {
+        Write-Log "? KRITISCHE FEHLER gefunden!" "ERROR"
+        Write-Log "   MINTutil kann nicht gestartet werden." "ERROR"
+        Write-Log "   Bitte beheben Sie zuerst die kritischen Fehler." "ERROR"
+    } elseif ($script:hasErrors -or $script:Issues.Count -gt 0) {
+        Write-Log "??  WARNUNGEN gefunden!" "WARNING"
+        Write-Log "   MINTutil kann mit Einschr?nkungen gestartet werden." "WARNING"
+        Write-Log "   Einige Features k?nnten nicht verf?gbar sein." "WARNING"
+    } else {
+        Write-Log "? Alle Checks erfolgreich!" "SUCCESS"
+        Write-Log "   MINTutil ist bereit zur Verwendung." "SUCCESS"
+    }
+    
+    # N?chste Schritte
+    if (-not $script:hasCriticalErrors) {
+        if (-not $Silent) {
+            Write-Host "`nN?chste Schritte:" -ForegroundColor Cyan
+            
+            if (-not $env:VIRTUAL_ENV) {
+                Write-Host "  1. Virtual Environment aktivieren: .\venv\Scripts\Activate.ps1" -ForegroundColor Yellow
+            }
+            
+            if ($script:hasErrors -or $script:Issues.Count -gt 0) {
+                Write-Host "  2. Beheben Sie die Warnungen f?r volle Funktionalit?t" -ForegroundColor Yellow
+            }
+            
+            Write-Host "  3. MINTutil starten: .\mint.ps1 start" -ForegroundColor Green
+        }
+    }
+    
+    # Log-Hinweis
+    if (-not $Silent) {
+        Write-Host "`nDetaillierte Logs finden Sie in: $script:logFile" -ForegroundColor DarkGray
+    }
+}
+
+# Report anzeigen (Legacy)
+function Show-Report {
     $totalIssues = $script:Issues.Count + $script:Warnings.Count
     
+    if (-not $Silent) {
+        Write-Host "`n" -NoNewline
+        Write-Host "?" * 50 -ForegroundColor Blue
+        Write-Host "? MINTutil Health Report" -ForegroundColor Blue
+        Write-Host "?" * 50 -ForegroundColor Blue
+    }
+    
     if ($script:Issues.Count -eq 0 -and $script:Warnings.Count -eq 0) {
-        Write-Host "`n? System ist gesund!" -ForegroundColor Green
-        Write-Host "   Keine Probleme gefunden." -ForegroundColor Green
+        if (-not $Silent) {
+            Write-Host "`n? System ist gesund!" -ForegroundColor Green
+            Write-Host "   Keine Probleme gefunden." -ForegroundColor Green
+        }
     } else {
         if ($script:Issues.Count -gt 0) {
-            Write-Host "`n? Fehler: $($script:Issues.Count)" -ForegroundColor Red
+            if (-not $Silent) {
+                Write-Host "`n? Fehler: $($script:Issues.Count)" -ForegroundColor Red
+            }
         }
         if ($script:Warnings.Count -gt 0) {
-            Write-Host "??  Warnungen: $($script:Warnings.Count)" -ForegroundColor Yellow
+            if (-not $Silent) {
+                Write-Host "?  Warnungen: $($script:Warnings.Count)" -ForegroundColor Yellow
+            }
         }
     }
     
     # Details
-    if ($script:Issues.Count -gt 0) {
+    if ($script:Issues.Count -gt 0 -and -not $Silent) {
         Write-Host "`n? Fehler:" -ForegroundColor Red
         foreach ($issue in $script:Issues) {
             Write-Host "   [$($issue.Category)] $($issue.Message)" -ForegroundColor Red
@@ -338,7 +170,7 @@ function Show-Report {
         }
     }
     
-    if ($script:Warnings.Count -gt 0) {
+    if ($script:Warnings.Count -gt 0 -and -not $Silent) {
         Write-Host "`n? Warnungen:" -ForegroundColor Yellow  
         foreach ($warning in $script:Warnings) {
             Write-Host "   [$($warning.Category)] $($warning.Message)" -ForegroundColor Yellow
@@ -348,7 +180,7 @@ function Show-Report {
         }
     }
     
-    if ($Verbose -and $script:Info.Count -gt 0) {
+    if ($Verbose -and $script:Info.Count -gt 0 -and -not $Silent) {
         Write-Host "`n? Informationen:" -ForegroundColor Cyan
         foreach ($info in $script:Info) {
             Write-Host "   [$($info.Category)] $($info.Message)" -ForegroundColor Cyan
@@ -361,11 +193,8 @@ function Show-Report {
     }
 }
 
+# Report exportieren
 function Export-Report {
-    <#
-    .SYNOPSIS
-        Exportiert Report in Datei
-    #>
     $report = @()
     $report += "MINTutil Health Report"
     $report += "=" * 50
@@ -390,81 +219,89 @@ function Export-Report {
     }
     
     $report | Out-File -FilePath $script:ReportFile -Encoding UTF8
-    Write-Host "`n? Report exportiert: $script:ReportFile" -ForegroundColor Green
+    Write-Log "Report exportiert: $script:ReportFile" "SUCCESS"
 }
 
+# AutoFix (Legacy)
 function Invoke-AutoFix {
-    <#
-    .SYNOPSIS
-        Versucht automatische Fehlerbehebung
-    #>
-    if (-not $Fix) { return }
+    # Bereits in einzelnen Check-Funktionen integriert
+    if (-not ($Fix -or $AutoFix)) { return }
     if ($script:Issues.Count -eq 0) { return }
     
-    Write-Host "`n? Automatische Fehlerbehebung..." -ForegroundColor Cyan
+    Write-Header "Automatische Fehlerbehebung"
+    Write-Log "AutoFix ist in die einzelnen Check-Funktionen integriert" "INFO"
+}
+
+# Hauptfunktion
+function Start-HealthCheck {
+    Initialize-Logging
+    Write-Log "=== MINTutil Health Check gestartet ===" "INFO"
     
-    foreach ($issue in $script:Issues) {
-        Write-Host "   Behebe: $($issue.Message)..." -ForegroundColor Yellow
-        
-        # Implementiere spezifische Fixes
-        switch -Regex ($issue.Message) {
-            "Verzeichnis .* fehlt" {
-                # Erstelle fehlendes Verzeichnis
-                if ($issue.Message -match "Verzeichnis (\w+) fehlt") {
-                    $dir = $Matches[1]
-                    $path = Join-Path $script:MintUtilRoot $dir
-                    New-Item -ItemType Directory -Path $path -Force | Out-Null
-                    Write-Host "      ? Verzeichnis erstellt" -ForegroundColor Green
-                }
-            }
-            ".env Datei fehlt" {
-                Write-Host "      ? F?hren Sie '.\mint.ps1 init' aus" -ForegroundColor DarkGray
-            }
-            default {
-                Write-Host "      ? Keine automatische L?sung verf?gbar" -ForegroundColor DarkGray
-            }
+    if (-not $Silent) {
+        Write-Host "? MINTutil System Health Check" -ForegroundColor Cyan
+        Write-Host "?" * 50 -ForegroundColor DarkGray
+        Write-Host "Modus: $Mode" -ForegroundColor DarkGray
+        if ($AutoFix -or $Fix) {
+            Write-Host "AutoFix: Aktiviert" -ForegroundColor Yellow
         }
+        Write-Host ""
+    }
+    
+    # F?hre Tests durch
+    Test-SystemInfo
+    
+    if ($Mode -eq 'quick' -or $Mode -eq 'full') {
+        Test-PythonEnvironment
+        Test-GitEnvironment
+        Test-DockerEnvironment
+        Test-OllamaEnvironment
+        Test-PortAvailability
+        Test-EnvironmentFile
+        Test-DirectoryStructure
+    }
+    
+    if ($Mode -eq 'dependencies' -or $Mode -eq 'full') {
+        Test-Dependencies
+    }
+    
+    if ($Mode -eq 'network' -or $Mode -eq 'full') {
+        Test-Network
+    }
+    
+    if ($Mode -eq 'logs' -or $Mode -eq 'full') {
+        Test-Logs
+    }
+    
+    # Zeige Report
+    Show-Report
+    Show-Summary
+    
+    # Exit-Code bestimmen
+    if ($script:hasCriticalErrors) {
+        Write-Log "Health Check mit kritischen Fehlern beendet" "ERROR"
+        exit $EXIT_CRITICAL
+    } elseif ($script:hasErrors -or $script:Issues.Count -gt 0) {
+        Write-Log "Health Check mit Fehlern beendet" "WARNING"
+        exit $EXIT_ERROR
+    } else {
+        Write-Log "Health Check erfolgreich beendet" "SUCCESS"
+        exit $EXIT_SUCCESS
     }
 }
 
 # Hauptprogramm
 try {
-    Write-Host "? MINTutil System Health Check" -ForegroundColor Cyan
-    Write-Host "?" * 50 -ForegroundColor DarkGray
-    Write-Host "Modus: $Mode" -ForegroundColor DarkGray
-    Write-Host ""
+    # F?r Kompatibilit?t mit Legacy-Code
+    if ($Fix) { $AutoFix = $true }
     
-    # F?hre Tests durch
-    Test-SystemInfo
-    Test-CoreRequirements
-    Test-Configuration
-    Test-Dependencies
-    Test-Network
-    Test-Logs
-    
-    # Auto-Fix wenn gew?nscht
-    if ($Fix) {
-        Invoke-AutoFix
-    }
-    
-    # Zeige Report
-    Show-Report
-    
-    # Exit-Code basierend auf Fehlern
-    if ($script:Issues.Count -gt 0) {
-        exit 1
-    } else {
-        exit 0
-    }
-    
+    Start-HealthCheck
 } catch {
-    Write-Host "`n? Fehler w?hrend der Diagnose:" -ForegroundColor Red
-    Write-Host "   $($_.Exception.Message)" -ForegroundColor Red
+    Write-Log "Fehler w?hrend der Diagnose: $($_.Exception.Message)" "ERROR"
     
-    if ($Verbose) {
+    if ($Verbose -and -not $Silent) {
         Write-Host "`nDetails:" -ForegroundColor DarkGray
         Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray
     }
     
-    exit 2
+    exit $EXIT_CRITICAL
 }
