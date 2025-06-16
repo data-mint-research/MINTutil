@@ -7,12 +7,36 @@
     Installiert alle Abh?ngigkeiten und richtet MINTutil komplett ein.
     Dieses Script installiert Python, Git, FFmpeg und alle Python-Pakete.
     Nutzt Chocolatey als Fallback f?r einfachere Installation.
+.PARAMETER InstallPath
+    Zielverzeichnis f?r die Installation (Standard: C:\MINTutil)
+.PARAMETER SkipPython
+    ?berspringt die Python-Installation
+.PARAMETER SkipGit
+    ?berspringt die Git-Installation
+.PARAMETER SkipFFmpeg
+    ?berspringt die FFmpeg-Installation
+.PARAMETER UseDocker
+    Installiert Docker Desktop statt lokaler Abh?ngigkeiten
+.PARAMETER UseChocolatey
+    Bevorzugt Chocolatey f?r Installationen
+.PARAMETER ForceChocolatey
+    Erzwingt Chocolatey-Installation und -Nutzung
 .EXAMPLE
     .\setup_windows.ps1
+    F?hrt die Standard-Installation durch
+.EXAMPLE
     .\setup_windows.ps1 -UseChocolatey
+    Nutzt Chocolatey f?r alle Installationen
+.EXAMPLE
+    .\setup_windows.ps1 -InstallPath "D:\Tools\MINTutil"
+    Installiert in ein custom Verzeichnis
 .NOTES
-    Autor: MINT-RESEARCH
-    Version: 1.1.0
+    Author: MINT-RESEARCH Team
+    Date: 2024-01-15
+    Version: 1.2.0
+    Dependencies: PowerShell 5.1+, Administratorrechte
+.LINK
+    https://github.com/data-mint-research/MINTutil/blob/main/docs/installation.md
 #>
 
 [CmdletBinding()]
@@ -431,7 +455,7 @@ Clear-Host
 Write-ColorOutput @"
 ?????????????????????????????????????????
 ?       MINTutil Windows Setup          ?
-?   Automatische Installation v1.1      ?
+?   Automatische Installation v1.2      ?
 ?????????????????????????????????????????
 "@ $InfoColor
 
