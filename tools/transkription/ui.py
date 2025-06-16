@@ -20,7 +20,7 @@ def render():
     
     ### Features:
     - ? Automatischer Video-Download
-    - ?? Audio-Extraktion und Transkription
+    - ? Audio-Extraktion und Transkription
     - ? Glossar-basierte Korrektur
     - ? Export als Markdown
     """)
@@ -195,7 +195,7 @@ def display_status():
         status_icons = {
             "starting": "?",
             "downloading": "?",
-            "transcribing": "??",
+            "transcribing": "?",
             "fixing": "?",
             "formatting": "?",
             "complete": "?"
