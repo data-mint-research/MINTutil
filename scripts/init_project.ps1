@@ -180,7 +180,6 @@ function Initialize-Directories {
     $directories = @(
         "tools",
         "scripts", 
-        "shared",
         "config",
         "logs",
         "data",
