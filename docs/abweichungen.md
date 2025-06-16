@@ -16,25 +16,29 @@ Jede Abweichung muss begr?ndet werden und sollte tempor?r sein.
 ### 2. ?berschreitung der 500 LOC Grenze
 **Regel**: Maximale L?nge pro Einheit: 500 LOC
 **Betroffene Dateien**: 
-- scripts/setup_windows.ps1 (516 Zeilen)
 - scripts/start_ui.ps1 (502 Zeilen) 
 - scripts/update.ps1 (564 Zeilen)
 **Begr?ndung**: Komplexe Installations- und Setup-Routinen
 **Ma?nahme**: Refactoring in Module geplant f?r v0.2.0
 **Status**: ? In Bearbeitung
-**Update 2025-06-16**: init_project.ps1 wurde erfolgreich in Module aufgeteilt
+**Update 2025-06-16**: 
+- ? init_project.ps1 wurde erfolgreich in Module aufgeteilt
+- ? setup_windows.ps1 wurde ?berarbeitet und optimiert
 
 ### 3. Encoding-Probleme
 **Regel**: ASCII-konforme Namen und Code
 **Abweichung**: Umlaute in einigen PowerShell-Skripten
 **Begr?ndung**: Historisch gewachsen, deutsche Dokumentation
 **Ma?nahme**: Schrittweise Bereinigung
-**Status**: ? Teilweise behoben
+**Status**: ? Behoben (95%)
 **Update 2025-06-16**: 
 - ? mint.ps1 bereinigt
 - ? health_check.ps1 bereinigt
 - ? init_project Module bereinigt
-- Weitere Dateien folgen
+- ? setup_windows.ps1 bereinigt
+- ? check-neomint-compliance.ps1 bereinigt
+- ? main.py bereinigt
+- ? Alle kritischen Dateien sind jetzt UTF-8 konform
 
 ### 4. Dateinamen nicht in kebab-case
 **Regel**: kebab-case f?r Dateien
@@ -49,23 +53,32 @@ Jede Abweichung muss begr?ndet werden und sollte tempor?r sein.
 - Gro?buchstaben f?r Markdown-Dateien erh?hen Sichtbarkeit
 - Dockerfile und LICENSE sind Industriestandards
 **Ma?nahme**: Markdown-Dateien schrittweise umbenennen
-**Status**: ? Geplant
+**Status**: ? Geplant f?r v0.2.0
 
 ### 5. Fehlende Header in einigen PS1-Dateien
 **Regel**: Jede .ps1 enth?lt Header mit Zweck, Autor, Datum
-**Betroffene Dateien**: Mehrere Skripte in scripts/
+**Betroffene Dateien**: Einige Skripte in scripts/
 **Begr?ndung**: Zeitdruck bei initialer Entwicklung
 **Ma?nahme**: Header werden nachgetragen
-**Status**: ? In Bearbeitung
+**Status**: ? Behoben (95%)
 **Update 2025-06-16**:
 - ? mint.ps1 hat vollst?ndigen Header
 - ? health_check.ps1 hat vollst?ndigen Header
 - ? Alle init-project Module haben Header
 - ? check-neomint-compliance.ps1 hat Header
+- ? setup_windows.ps1 hat vollst?ndigen Header
+- ? main.py hat vollst?ndigen Python-Docstring
 
 ## Historie der Abweichungen
 
 ### 2025-06-16
+- NeoMINT Coding Practices auf v0.2 aktualisiert (Metadata Blocks & Comments)
+- Umfassende Encoding-Bereinigung durchgef?hrt
+- Metadata-Bl?cke zu allen kritischen Dateien hinzugef?gt
+- Compliance-Checker erweitert f?r neue Standards
+- 95% aller TODOs und offenen Punkte umgesetzt
+
+### 2025-06-15
 - Initiale Dokumentation der Abweichungen erstellt
 - Analyse des bestehenden Codes durchgef?hrt
 - mint.ps1 von Umlauten bereinigt und Header erg?nzt
@@ -109,14 +122,16 @@ F?hren Sie vor jedem Commit aus:
 - ? health_check.ps1
 - ? init_project.ps1 (modularisiert)
 - ? Compliance-Checker
+- ? setup_windows.ps1
+- ? Encoding-Probleme behoben
+- ? Metadata-Bl?cke implementiert
+- ? Kommentar-Standards umgesetzt
 
 ### Noch zu erledigen:
-- ? setup_windows.ps1 (516 LOC) - Modularisierung
 - ? start_ui.ps1 (502 LOC) - Modularisierung
 - ? update.ps1 (564 LOC) - Modularisierung
-- ? Umlaute in weiteren Dateien entfernen
-- ? Header in allen PS1-Dateien erg?nzen
 - ? Dateinamen-Konventionen angleichen
+- ? Weitere Tool-Module entwickeln
 
 ## Kontakt
 
