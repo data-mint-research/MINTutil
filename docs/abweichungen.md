@@ -16,20 +16,25 @@ Jede Abweichung muss begr?ndet werden und sollte tempor?r sein.
 ### 2. ?berschreitung der 500 LOC Grenze
 **Regel**: Maximale L?nge pro Einheit: 500 LOC
 **Betroffene Dateien**: 
-- scripts/init_project.ps1 (533 Zeilen)
 - scripts/setup_windows.ps1 (516 Zeilen)
-- scripts/start_ui.ps1 (502 Zeilen)
+- scripts/start_ui.ps1 (502 Zeilen) 
 - scripts/update.ps1 (564 Zeilen)
 **Begr?ndung**: Komplexe Installations- und Setup-Routinen
 **Ma?nahme**: Refactoring in Module geplant f?r v0.2.0
 **Status**: ? In Bearbeitung
+**Update 2025-06-16**: init_project.ps1 wurde erfolgreich in Module aufgeteilt
 
 ### 3. Encoding-Probleme
 **Regel**: ASCII-konforme Namen und Code
 **Abweichung**: Umlaute in einigen PowerShell-Skripten
 **Begr?ndung**: Historisch gewachsen, deutsche Dokumentation
-**Ma?nahme**: mint.ps1 bereits korrigiert, weitere Dateien folgen
+**Ma?nahme**: Schrittweise Bereinigung
 **Status**: ? Teilweise behoben
+**Update 2025-06-16**: 
+- ? mint.ps1 bereinigt
+- ? health_check.ps1 bereinigt
+- ? init_project Module bereinigt
+- Weitere Dateien folgen
 
 ### 4. Dateinamen nicht in kebab-case
 **Regel**: kebab-case f?r Dateien
@@ -52,6 +57,11 @@ Jede Abweichung muss begr?ndet werden und sollte tempor?r sein.
 **Begr?ndung**: Zeitdruck bei initialer Entwicklung
 **Ma?nahme**: Header werden nachgetragen
 **Status**: ? In Bearbeitung
+**Update 2025-06-16**:
+- ? mint.ps1 hat vollst?ndigen Header
+- ? health_check.ps1 hat vollst?ndigen Header
+- ? Alle init-project Module haben Header
+- ? check-neomint-compliance.ps1 hat Header
 
 ## Historie der Abweichungen
 
@@ -61,6 +71,12 @@ Jede Abweichung muss begr?ndet werden und sollte tempor?r sein.
 - mint.ps1 von Umlauten bereinigt und Header erg?nzt
 - NeoMINT Compliance Checker implementiert
 - GitHub Action f?r automatische Pr?fung hinzugef?gt
+- health_check.ps1 bereinigt und Header erg?nzt
+- init_project.ps1 in konforme Module aufgeteilt:
+  - init-project-main.ps1 (147 LOC)
+  - init-project-validation.ps1 (204 LOC)
+  - init-project-setup.ps1 (349 LOC)
+  - init_project.ps1 als schlanker Wrapper (41 LOC)
 
 ## Prozess f?r neue Abweichungen
 
@@ -80,6 +96,27 @@ F?hren Sie vor jedem Commit aus:
 ```powershell
 .\scripts\check-neomint-compliance.ps1
 ```
+
+## Fortschritt
+
+### Bereits konform:
+- ? Zentrale Logging-Funktion (Write-Log)
+- ? Dokumentation unter /docs/
+- ? Sicherheitsrichtlinien
+- ? Versionskontrolle
+- ? KI-Kompatibilit?t
+- ? mint.ps1 (Hauptdatei)
+- ? health_check.ps1
+- ? init_project.ps1 (modularisiert)
+- ? Compliance-Checker
+
+### Noch zu erledigen:
+- ? setup_windows.ps1 (516 LOC) - Modularisierung
+- ? start_ui.ps1 (502 LOC) - Modularisierung
+- ? update.ps1 (564 LOC) - Modularisierung
+- ? Umlaute in weiteren Dateien entfernen
+- ? Header in allen PS1-Dateien erg?nzen
+- ? Dateinamen-Konventionen angleichen
 
 ## Kontakt
 
