@@ -185,6 +185,15 @@ class PageLoader:
             if tool_path not in sys.path:
                 sys.path.insert(0, tool_path)
             
+            # Also add parent paths for better import resolution
+            parent_paths = [
+                str(self.tools_path),
+                str(self.root_path)
+            ]
+            for path in parent_paths:
+                if path not in sys.path:
+                    sys.path.insert(0, path)
+            
             # Execute module
             spec.loader.exec_module(module)
             
@@ -195,11 +204,15 @@ class PageLoader:
             
         except SyntaxError as e:
             st.error(f"Syntax-Fehler in '{tool_id}': {str(e)}")
-            st.code(f"Datei: {e.filename}\nZeile: {e.lineno}\nProblem: {e.text}")
+            if hasattr(e, 'filename') and hasattr(e, 'lineno') and hasattr(e, 'text'):
+                st.code(f"Datei: {e.filename}\nZeile: {e.lineno}\nProblem: {e.text}")
             return None
         except ImportError as e:
             st.error(f"Import-Fehler in '{tool_id}': {str(e)}")
             st.info("Tipp: ?berpr?fen Sie, ob alle ben?tigten Pakete installiert sind")
+            # Show specific missing module
+            if hasattr(e, 'name'):
+                st.error(f"Fehlendes Modul: {e.name}")
             return None
         except Exception as e:
             st.error(f"Fehler beim Importieren von '{tool_id}': {str(e)}")
