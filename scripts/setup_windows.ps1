@@ -6,11 +6,13 @@
 .DESCRIPTION
     Installiert alle Abh?ngigkeiten und richtet MINTutil komplett ein.
     Dieses Script installiert Python, Git, FFmpeg und alle Python-Pakete.
+    Nutzt Chocolatey als Fallback f?r einfachere Installation.
 .EXAMPLE
     .\setup_windows.ps1
+    .\setup_windows.ps1 -UseChocolatey
 .NOTES
     Autor: MINT-RESEARCH
-    Version: 1.0.0
+    Version: 1.1.0
 #>
 
 [CmdletBinding()]
@@ -19,7 +21,9 @@ param(
     [switch]$SkipPython,
     [switch]$SkipGit,
     [switch]$SkipFFmpeg,
-    [switch]$UseDocker
+    [switch]$UseDocker,
+    [switch]$UseChocolatey,
+    [switch]$ForceChocolatey
 )
 
 # Farben f?r Output
@@ -48,6 +52,87 @@ function Test-Administrator {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
+function Install-Chocolatey {
+    Write-ColorOutput "`n? Chocolatey Installation..." $InfoColor
+    
+    if (Test-CommandExists "choco") {
+        $chocoVersion = choco --version
+        Write-ColorOutput "? Chocolatey bereits installiert: v$chocoVersion" $SuccessColor
+        return $true
+    }
+    
+    Write-ColorOutput "Installiere Chocolatey Package Manager..." $InfoColor
+    
+    try {
+        # Chocolatey Installation
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        
+        $installScript = (New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')
+        Invoke-Expression $installScript
+        
+        # PATH aktualisieren
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        $env:ChocolateyInstall = "$env:ProgramData\chocolatey"
+        
+        # Pr?fe Installation
+        if (Test-CommandExists "choco") {
+            Write-ColorOutput "? Chocolatey erfolgreich installiert!" $SuccessColor
+            
+            # Konfiguriere Chocolatey
+            choco feature enable -n allowGlobalConfirmation
+            return $true
+        } else {
+            Write-ColorOutput "? Chocolatey Installation fehlgeschlagen" $ErrorColor
+            return $false
+        }
+    }
+    catch {
+        Write-ColorOutput "? Fehler bei Chocolatey-Installation: $_" $ErrorColor
+        return $false
+    }
+}
+
+function Install-WithChocolatey {
+    param(
+        [string]$PackageName,
+        [string]$DisplayName,
+        [string]$TestCommand
+    )
+    
+    Write-ColorOutput "`n? $DisplayName Installation (via Chocolatey)..." $InfoColor
+    
+    if (Test-CommandExists $TestCommand) {
+        Write-ColorOutput "? $DisplayName bereits installiert" $SuccessColor
+        return $true
+    }
+    
+    try {
+        Write-ColorOutput "Installiere $DisplayName..." $InfoColor
+        choco install $PackageName -y --force
+        
+        # PATH aktualisieren
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        
+        # Refreshenv f?r Chocolatey
+        if (Test-Path "$env:ChocolateyInstall\bin\refreshenv.cmd") {
+            & "$env:ChocolateyInstall\bin\refreshenv.cmd"
+        }
+        
+        if (Test-CommandExists $TestCommand) {
+            Write-ColorOutput "? $DisplayName erfolgreich installiert!" $SuccessColor
+            return $true
+        } else {
+            Write-ColorOutput "?? $DisplayName Installation m?glicherweise unvollst?ndig" $WarningColor
+            return $false
+        }
+    }
+    catch {
+        Write-ColorOutput "? Fehler bei $DisplayName Installation: $_" $ErrorColor
+        return $false
+    }
+}
+
 function Install-Python {
     Write-ColorOutput "`n? Python Installation..." $InfoColor
     
@@ -57,7 +142,23 @@ function Install-Python {
         return
     }
     
-    Write-ColorOutput "Lade Python 3.11 herunter..." $InfoColor
+    # Pr?fe ob Chocolatey verf?gbar oder gew?nscht
+    if ($UseChocolatey -or $ForceChocolatey -or (Test-CommandExists "choco")) {
+        if (-not (Test-CommandExists "choco")) {
+            if (-not (Install-Chocolatey)) {
+                Write-ColorOutput "Fallback auf manuelle Installation..." $WarningColor
+            }
+        }
+        
+        if (Test-CommandExists "choco") {
+            if (Install-WithChocolatey -PackageName "python311" -DisplayName "Python 3.11" -TestCommand "python") {
+                return
+            }
+        }
+    }
+    
+    # Fallback: Manuelle Installation
+    Write-ColorOutput "Lade Python 3.11 herunter (manuell)..." $InfoColor
     $pythonUrl = "https://www.python.org/ftp/python/3.11.7/python-3.11.7-amd64.exe"
     $pythonInstaller = "$env:TEMP\python-installer.exe"
     
@@ -99,7 +200,23 @@ function Install-Git {
         return
     }
     
-    Write-ColorOutput "Lade Git herunter..." $InfoColor
+    # Pr?fe ob Chocolatey verf?gbar
+    if ($UseChocolatey -or $ForceChocolatey -or (Test-CommandExists "choco")) {
+        if (-not (Test-CommandExists "choco")) {
+            if (-not (Install-Chocolatey)) {
+                Write-ColorOutput "Fallback auf manuelle Installation..." $WarningColor
+            }
+        }
+        
+        if (Test-CommandExists "choco") {
+            if (Install-WithChocolatey -PackageName "git" -DisplayName "Git" -TestCommand "git") {
+                return
+            }
+        }
+    }
+    
+    # Fallback: Manuelle Installation
+    Write-ColorOutput "Lade Git herunter (manuell)..." $InfoColor
     $gitUrl = "https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe"
     $gitInstaller = "$env:TEMP\git-installer.exe"
     
@@ -131,7 +248,23 @@ function Install-FFmpeg {
         return
     }
     
-    Write-ColorOutput "Lade FFmpeg herunter..." $InfoColor
+    # Pr?fe ob Chocolatey verf?gbar
+    if ($UseChocolatey -or $ForceChocolatey -or (Test-CommandExists "choco")) {
+        if (-not (Test-CommandExists "choco")) {
+            if (-not (Install-Chocolatey)) {
+                Write-ColorOutput "Fallback auf manuelle Installation..." $WarningColor
+            }
+        }
+        
+        if (Test-CommandExists "choco") {
+            if (Install-WithChocolatey -PackageName "ffmpeg" -DisplayName "FFmpeg" -TestCommand "ffmpeg") {
+                return
+            }
+        }
+    }
+    
+    # Fallback: Manuelle Installation
+    Write-ColorOutput "Lade FFmpeg herunter (manuell)..." $InfoColor
     $ffmpegUrl = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
     $ffmpegZip = "$env:TEMP\ffmpeg.zip"
     $ffmpegPath = "C:\ffmpeg"
@@ -184,26 +317,33 @@ function Install-Docker {
         return
     }
     
-    Write-ColorOutput "Lade Docker Desktop herunter..." $InfoColor
-    $dockerUrl = "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe"
-    $dockerInstaller = "$env:TEMP\docker-installer.exe"
+    # Docker mit Chocolatey installieren (empfohlen)
+    if (-not (Test-CommandExists "choco")) {
+        if (-not (Install-Chocolatey)) {
+            Write-ColorOutput "Docker Installation ben?tigt Chocolatey" $ErrorColor
+            exit 1
+        }
+    }
     
     try {
-        Invoke-WebRequest -Uri $dockerUrl -OutFile $dockerInstaller -UseBasicParsing
-        Write-ColorOutput "Installiere Docker Desktop..." $InfoColor
+        Write-ColorOutput "Installiere Docker Desktop via Chocolatey..." $InfoColor
+        choco install docker-desktop -y
         
-        Start-Process -FilePath $dockerInstaller -ArgumentList "install", "--quiet", "--accept-license" -Wait -NoNewWindow
-        
-        Write-ColorOutput "? Docker Desktop installiert! Neustart erforderlich." $SuccessColor
+        Write-ColorOutput "? Docker Desktop installiert!" $SuccessColor
         Write-ColorOutput "?? Bitte starten Sie den Computer neu und f?hren Sie das Script erneut aus." $WarningColor
+        
+        # Frage ob Neustart gew?nscht
+        Write-Host "`nM?chten Sie jetzt neu starten? (J/N): " -NoNewline
+        $response = Read-Host
+        if ($response -match '^[Jj]') {
+            Restart-Computer -Force
+        }
+        
         exit 0
     }
     catch {
         Write-ColorOutput "? Fehler bei Docker-Installation: $_" $ErrorColor
         exit 1
-    }
-    finally {
-        Remove-Item $dockerInstaller -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -279,6 +419,11 @@ function Show-Summary {
     
     Write-ColorOutput "`nMINTutil l?uft unter: http://localhost:8501" $SuccessColor
     Write-ColorOutput "`n? Dokumentation: https://github.com/data-mint-research/MINTutil" $InfoColor
+    
+    if (Test-CommandExists "choco") {
+        Write-ColorOutput "`n? Chocolatey wurde installiert!" $InfoColor
+        Write-ColorOutput "   Sie k?nnen jetzt Software einfach installieren mit: choco install <paket>" $InfoColor
+    }
 }
 
 # Main
@@ -286,7 +431,7 @@ Clear-Host
 Write-ColorOutput @"
 ?????????????????????????????????????????
 ?       MINTutil Windows Setup          ?
-?   Automatische Installation v1.0      ?
+?   Automatische Installation v1.1      ?
 ?????????????????????????????????????????
 "@ $InfoColor
 
@@ -302,6 +447,13 @@ $executionPolicy = Get-ExecutionPolicy
 if ($executionPolicy -eq "Restricted") {
     Write-ColorOutput "Setze Execution Policy..." $InfoColor
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+}
+
+# Pr?fe ob Chocolatey gew?nscht
+if ($ForceChocolatey) {
+    Write-ColorOutput "`n? Chocolatey-Installation wird erzwungen..." $InfoColor
+    Install-Chocolatey
+    $UseChocolatey = $true
 }
 
 # Installationen
