@@ -27,7 +27,7 @@ def render_sidebar():
             st.warning("Keine Tools gefunden")
             return None
         
-        st.markdown("### ?? Verf?gbare Tools")
+        st.markdown("### ? Verf?gbare Tools")
         
         # Tool selection
         selected = None
@@ -46,7 +46,7 @@ def render_sidebar():
                 
         # Footer
         st.markdown("---")
-        st.markdown("### ?? System")
+        st.markdown("### ? System")
         if st.button("? Health Check", use_container_width=True):
             selected = "__health_check__"
         if st.button("? Logs", use_container_width=True):
@@ -55,7 +55,7 @@ def render_sidebar():
             selected = "__settings__"
             
         st.markdown("---")
-        st.caption("MINTutil v1.0.0")
+        st.caption("MINTutil v0.1.0")
         
         return selected
 
