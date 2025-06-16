@@ -1,4 +1,12 @@
+# MINTutil Docker Image
+# Copyright (c) 2025 MINT-RESEARCH
+
 FROM python:3.11-slim
+
+# Metadata
+LABEL maintainer="MINT-RESEARCH <mint-research@neomint.com>"
+LABEL description="MINTutil - Modulare, intelligente Netzwerk-Tools"
+LABEL version="0.1.0"
 
 # Set working directory
 WORKDIR /app
