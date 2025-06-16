@@ -7,10 +7,21 @@ import re
 import os
 from datetime import datetime
 import sys
+import importlib.util
 
 # Add tool scripts to path
 tool_path = Path(__file__).parent
-sys.path.append(str(tool_path / "scripts"))
+sys.path.insert(0, str(tool_path))
+
+# Robust module import function
+def import_module_from_path(module_name, file_path):
+    """Import a module from a specific file path"""
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    if spec and spec.loader:
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    return None
 
 def render():
     """Main UI render function for YouTube Transcription Tool"""
@@ -32,6 +43,10 @@ def render():
         st.session_state.current_transcript = None
     if 'fixed_transcript' not in st.session_state:
         st.session_state.fixed_transcript = None
+    
+    # Check dependencies
+    if not check_dependencies():
+        return
     
     # Main input section
     col1, col2 = st.columns([3, 1])
@@ -72,6 +87,40 @@ def render():
     # Recent transcriptions
     with st.expander("? Letzte Transkriptionen"):
         show_recent_transcriptions()
+
+def check_dependencies():
+    """Check if all required dependencies are installed"""
+    missing_deps = []
+    
+    # Check Python packages
+    try:
+        import whisper
+    except ImportError:
+        missing_deps.append("openai-whisper")
+    
+    try:
+        import yt_dlp
+    except ImportError:
+        missing_deps.append("yt-dlp")
+    
+    # Check FFmpeg
+    try:
+        result = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True)
+        if result.returncode != 0:
+            missing_deps.append("FFmpeg (System)")
+    except FileNotFoundError:
+        missing_deps.append("FFmpeg (System)")
+    
+    if missing_deps:
+        st.error("? Fehlende Abh?ngigkeiten:")
+        for dep in missing_deps:
+            st.write(f"- {dep}")
+        st.info("? Installieren Sie die fehlenden Abh?ngigkeiten mit: pip install -r requirements.txt")
+        if "FFmpeg" in str(missing_deps):
+            st.info("? FFmpeg installieren: https://ffmpeg.org/download.html")
+        return False
+    
+    return True
 
 def validate_youtube_url(url):
     """Validate YouTube URL format"""
@@ -146,8 +195,15 @@ def create_directories():
 def download_audio(url):
     """Download audio from YouTube video"""
     try:
-        from scripts.transcribe import download_youtube_audio
-        return download_youtube_audio(url)
+        # Import module dynamically
+        transcribe_module = import_module_from_path(
+            "transcribe", 
+            tool_path / "scripts" / "transcribe.py"
+        )
+        if transcribe_module:
+            return transcribe_module.download_youtube_audio(url)
+        else:
+            raise ImportError("Could not import transcribe module")
     except Exception as e:
         log_error(f"Download error: {str(e)}")
         return None
@@ -155,8 +211,14 @@ def download_audio(url):
 def transcribe_audio(audio_path, model):
     """Transcribe audio using Whisper"""
     try:
-        from scripts.transcribe import transcribe_with_whisper
-        return transcribe_with_whisper(audio_path, model)
+        transcribe_module = import_module_from_path(
+            "transcribe", 
+            tool_path / "scripts" / "transcribe.py"
+        )
+        if transcribe_module:
+            return transcribe_module.transcribe_with_whisper(audio_path, model)
+        else:
+            raise ImportError("Could not import transcribe module")
     except Exception as e:
         log_error(f"Transcription error: {str(e)}")
         return None
@@ -164,8 +226,14 @@ def transcribe_audio(audio_path, model):
 def fix_transcript(transcript_path):
     """Fix names in transcript using glossary"""
     try:
-        from scripts.fix_names import fix_names_in_transcript
-        return fix_names_in_transcript(transcript_path)
+        fix_names_module = import_module_from_path(
+            "fix_names", 
+            tool_path / "scripts" / "fix_names.py"
+        )
+        if fix_names_module:
+            return fix_names_module.fix_names_in_transcript(transcript_path)
+        else:
+            raise ImportError("Could not import fix_names module")
     except Exception as e:
         log_error(f"Fix names error: {str(e)}")
         return transcript_path
@@ -173,8 +241,14 @@ def fix_transcript(transcript_path):
 def create_markdown(transcript_path, url):
     """Create markdown file from transcript"""
     try:
-        from scripts.postprocess import create_markdown_output
-        return create_markdown_output(transcript_path, url)
+        postprocess_module = import_module_from_path(
+            "postprocess", 
+            tool_path / "scripts" / "postprocess.py"
+        )
+        if postprocess_module:
+            return postprocess_module.create_markdown_output(transcript_path, url)
+        else:
+            raise ImportError("Could not import postprocess module")
     except Exception as e:
         log_error(f"Markdown creation error: {str(e)}")
         return transcript_path
@@ -196,7 +270,7 @@ def display_status():
             "starting": "?",
             "downloading": "?",
             "transcribing": "?",
-            "fixing": "?",
+            "fixing": "??",
             "formatting": "?",
             "complete": "?"
         }
@@ -241,7 +315,7 @@ def display_results():
             
             # Download button
             st.download_button(
-                label="? Markdown herunterladen",
+                label="?? Markdown herunterladen",
                 data=st.session_state.fixed_transcript,
                 file_name=f"transcript_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
                 mime="text/markdown"
@@ -251,10 +325,17 @@ def manage_glossary():
     """Manage glossary entries"""
     glossary_path = tool_path / "config" / "glossar.json"
     
+    # Ensure config directory exists
+    glossary_path.parent.mkdir(exist_ok=True)
+    
     # Load glossary
     if glossary_path.exists():
-        with open(glossary_path, 'r', encoding='utf-8') as f:
-            glossary = json.load(f)
+        try:
+            with open(glossary_path, 'r', encoding='utf-8') as f:
+                glossary = json.load(f)
+        except json.JSONDecodeError:
+            glossary = {}
+            st.warning("?? Glossar-Datei ist besch?digt, erstelle neue...")
     else:
         glossary = {}
     
