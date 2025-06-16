@@ -4,8 +4,21 @@
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)
+![NeoMINT](https://img.shields.io/badge/NeoMINT-compliant-brightgreen.svg)
 
 ? **MINTutil** - Modulare, intelligente Netzwerk-Tools f?r Utility und Analyse
+
+## ? Code-Qualit?t
+
+Dieses Projekt folgt den **NeoMINT Coding Practices v0.1** f?r optimale LLM-Kompatibilit?t:
+- ? Maximale Dateil?nge: 500 LOC
+- ? Keine Umlaute im Code (Work in Progress)
+- ? Zentrale Logging-Funktionen
+- ? Vollst?ndige Dokumentation
+
+**Compliance pr?fen**: `.\scripts\check-neomint-compliance.ps1`
+
+Details siehe [docs/neomint-coding-practices.md](docs/neomint-coding-practices.md)
 
 ## ? Installation in 30 Sekunden
 
@@ -167,13 +180,13 @@ pre-commit install
 
 ```
 MINTutil/
-??? streamlit_app/      # Haupt-UI Anwendung
-??? tools/              # Modulare Tools
-?   ??? transkription/  # Transkriptions-Tool
-??? scripts/            # Setup & Utility-Scripts
-??? config/             # Konfigurationsdateien
-??? tests/              # Test-Suite
-??? docs/               # Dokumentation
+? streamlit_app/      # Haupt-UI Anwendung
+? tools/              # Modulare Tools
+?   ? transkription/  # Transkriptions-Tool
+? scripts/            # Setup & Utility-Scripts
+? config/             # Konfigurationsdateien
+? tests/              # Test-Suite
+? docs/               # Dokumentation
 ```
 
 ## ? Entwicklung
@@ -188,10 +201,10 @@ MINTutil/
 Beispiel-Struktur:
 ```
 tools/
-??? mein_tool/
-    ??? tool.meta.yaml
-    ??? ui.py
-    ??? scripts/
+? mein_tool/
+    ? tool.meta.yaml
+    ? ui.py
+    ? scripts/
 ```
 
 ### Tests ausf?hren
@@ -201,6 +214,9 @@ pytest tests/ -v
 
 ### Code-Qualit?t
 ```bash
+# NeoMINT Compliance pr?fen
+.\scripts\check-neomint-compliance.ps1
+
 # Formatierung
 black .
 
@@ -284,6 +300,8 @@ Beitr?ge sind willkommen! Bitte beachten Sie:
 3. Committen Sie Ihre ?nderungen (`git commit -m 'Add some AmazingFeature'`)
 4. Pushen Sie zum Branch (`git push origin feature/AmazingFeature`)
 5. ?ffnen Sie einen Pull Request
+
+**Wichtig**: Alle Beitr?ge m?ssen den [NeoMINT Coding Practices](docs/neomint-coding-practices.md) entsprechen.
 
 ## ? Support
 
