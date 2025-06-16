@@ -76,24 +76,24 @@ function Test-EnvironmentFile {
     Write-Header "Umgebungskonfiguration (.env)"
     
     $envPath = Join-Path $script:MintUtilRoot ".env"
-    $templatePath = Join-Path $script:MintUtilRoot "config" "system.env.template"
+    $envExample = Join-Path $script:MintUtilRoot ".env.example"
     
     # .env existiert?
     if (-not (Test-Path $envPath)) {
         Write-CheckResult ".env-Datei" $false "Datei nicht gefunden"
         Add-Issue "Config" ".env Datei fehlt" "F?hren Sie '.\mint.ps1 init' aus"
         
-        # Template vorhanden?
-        if (Test-Path $templatePath) {
+        # .env.example vorhanden?
+        if (Test-Path $envExample) {
             if ($AutoFix -or $Fix) {
-                Write-Log "Erstelle .env aus Template..." "INFO"
-                Copy-Item $templatePath $envPath
-                Write-CheckResult ".env-Erstellung" $true ".env wurde aus Template erstellt"
+                Write-Log "Erstelle .env aus .env.example..." "INFO"
+                Copy-Item $envExample $envPath
+                Write-CheckResult ".env-Erstellung" $true ".env wurde aus .env.example erstellt"
             } else {
-                Write-Log "  ? Erstellen Sie .env mit: copy config\system.env.template .env" "WARNING"
+                Write-Log "  ? Erstellen Sie .env mit: copy .env.example .env" "WARNING"
             }
         } else {
-            Write-CheckResult ".env-Template" $false "Template nicht gefunden"
+            Write-CheckResult ".env.example" $false "Template nicht gefunden"
             $script:hasCriticalErrors = $true
         }
         return
@@ -160,10 +160,10 @@ function Test-EnvironmentFile {
         Write-CheckResult "Fehlende Variablen" $false "$($missingVars.Count) Variable(n) fehlen"
         Write-Log "  ? Fehlende Variablen: $($missingVars -join ', ')" "WARNING"
         
-        if (($AutoFix -or $Fix) -and (Test-Path $templatePath)) {
-            Write-Log "Erg?nze fehlende Variablen aus Template..." "INFO"
+        if (($AutoFix -or $Fix) -and (Test-Path $envExample)) {
+            Write-Log "Erg?nze fehlende Variablen aus .env.example..." "INFO"
             # Template-Variablen laden und fehlende erg?nzen
-            $templateContent = Get-Content $templatePath
+            $templateContent = Get-Content $envExample
             $addedVars = @()
             
             foreach ($line in $templateContent) {

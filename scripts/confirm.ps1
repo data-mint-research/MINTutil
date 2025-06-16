@@ -97,7 +97,7 @@ function Get-UserConfirmation {
         
         # Timeout erreicht
         if (-not $keypressed -and [string]::IsNullOrWhiteSpace($response)) {
-            Write-Host "   ??  Timeout - verwende Default" -ForegroundColor DarkGray
+            Write-Host "   ?  Timeout - verwende Default" -ForegroundColor DarkGray
             switch ($Default) {
                 'Yes' { return $true }
                 'No' { return $false }
