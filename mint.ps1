@@ -265,7 +265,7 @@ try {
     # Pr?fe Voraussetzungen
     $prerequisites = Test-Prerequisites
     if ($prerequisites.Count -gt 0) {
-        Write-Host "??  Voraussetzungen nicht erf?llt:" -ForegroundColor Red
+        Write-Host "?  Voraussetzungen nicht erf?llt:" -ForegroundColor Red
         $prerequisites | ForEach-Object { Write-Host "   - $_" -ForegroundColor Red }
         Write-Log "Voraussetzungen nicht erf?llt. Beende mit Fehler." -Level ERROR
         exit 1
