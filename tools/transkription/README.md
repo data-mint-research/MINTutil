@@ -1,123 +1,119 @@
-# YouTube Transkription Tool
+# Transkriptions-Tool
 
-Ein lokales Tool zur Transkription von YouTube-Videos mit OpenAI Whisper und automatischer Namenskorrektur.
+Automatische Transkription von Audio- und Video-Dateien sowie YouTube-Videos mit OpenAI Whisper.
 
 ## Features
 
-- ? Automatischer Download von YouTube-Videos (nur Audio)
-- ?? Transkription mit OpenAI Whisper (verschiedene Modellgr??en)
-- ? Glossar-basierte Korrektur von Namen und Begriffen
-- ? Export als formatiertes Markdown
-- ? Optional: Container-basierte Ausf?hrung mit Docker
-- ? Vollst?ndig lokal - keine Daten verlassen Ihr System
+- ? YouTube-Video Transkription
+- ? Lokale Audio/Video-Datei Transkription  
+- ? Mehrsprachige Unterst?tzung (Standard: Deutsch)
+- ? Multiple Ausgabeformate (TXT, SRT, VTT, JSON)
+- ? CLI und Streamlit UI
 
-## Verzeichnisstruktur
+## Installation
 
+### 1. Basis-Requirements
+```bash
+pip install -r ../../requirements.txt
 ```
-tools/transkription/
-??? ui.py                  # Streamlit UI
-??? scripts/
-?   ??? transcribe.py      # YouTube Download & Whisper
-?   ??? fix_names.py       # Glossar-Korrektur
-?   ??? postprocess.py     # Markdown-Export
-??? containers/
-?   ??? yt-dlp.Dockerfile
-?   ??? whisper.Dockerfile
-??? config/
-?   ??? glossar.json       # Korrektur-W?rterbuch
-??? data/
-?   ??? raw/              # Original-Transkripte
-?   ??? fixed/            # Korrigierte Markdown-Dateien
-?   ??? audio/            # Heruntergeladene Audio-Dateien
-??? logs/
-    ??? transkription.log
+
+### 2. Transkriptions-Dependencies
+```bash
+# F?r Transkription erforderlich:
+pip install openai-whisper yt-dlp
+
+# Optional f?r bessere Performance:
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
 
 ## Verwendung
 
-### ?ber MINTutil GUI
+### CLI (Command Line)
 
-1. Starten Sie MINTutil: `streamlit run streamlit_app/main.py`
-2. W?hlen Sie "YouTube Transkription" aus der Sidebar
-3. Geben Sie eine YouTube-URL ein
-4. W?hlen Sie ein Whisper-Modell (tiny, base, small, medium, large)
-5. Klicken Sie auf "Transkription starten"
-
-### Standalone (Kommandozeile)
-
+#### YouTube-Video transkribieren:
 ```bash
-# Audio herunterladen und transkribieren
-python scripts/transcribe.py "https://www.youtube.com/watch?v=..."
-
-# Namen korrigieren
-python scripts/fix_names.py data/raw/transcript_*.txt
-
-# Markdown erstellen
-python scripts/postprocess.py data/fixed/fixed_*.txt "https://www.youtube.com/watch?v=..."
+python scripts/transcribe.py "https://www.youtube.com/watch?v=VIDEO_ID"
 ```
 
-## Glossar verwalten
-
-Das Glossar (`config/glossar.json`) enth?lt Korrekturen f?r h?ufig falsch transkribierte Begriffe:
-
-```json
-{
-  "chat gpt": "ChatGPT",
-  "open ai": "OpenAI",
-  "youtube": "YouTube"
-}
-```
-
-Sie k?nnen das Glossar ?ber die UI oder direkt in der JSON-Datei bearbeiten.
-
-## Docker-Unterst?tzung
-
-Das Tool kann optional Docker-Container verwenden:
-
+#### Lokale Datei transkribieren:
 ```bash
-# Container bauen
-docker build -f containers/yt-dlp.Dockerfile -t mintutil-ytdlp .
-docker build -f containers/whisper.Dockerfile -t mintutil-whisper .
-
-# Verwenden
-docker run --rm -v $(pwd)/data/audio:/downloads mintutil-ytdlp [URL]
+python scripts/transcribe.py "path/to/audio.mp3"
 ```
 
-## Whisper-Modelle
+#### Mit Optionen:
+```bash
+# Gr??eres Modell f?r bessere Qualit?t
+python scripts/transcribe.py "video.mp4" --model medium
 
-- **tiny**: Schnellste, geringste Genauigkeit (~1GB)
-- **base**: Gute Balance (empfohlen) (~1GB)
-- **small**: Bessere Genauigkeit (~2GB)
-- **medium**: Hohe Genauigkeit (~5GB)
-- **large**: Beste Genauigkeit (~10GB)
+# Andere Sprache
+python scripts/transcribe.py "audio.wav" --language en
 
-## Anforderungen
+# Ausgabe-Verzeichnis festlegen
+python scripts/transcribe.py "file.mp3" --output ./meine_transkriptionen
+```
 
-- Python 3.9+
-- ffmpeg
-- ~2-10 GB Speicher (je nach Modell)
-- Optional: Docker
+#### Dependencies pr?fen:
+```bash
+python scripts/transcribe.py --check-deps
+```
+
+### Streamlit UI
+
+Starten Sie MINTutil und w?hlen Sie das Transkriptions-Tool aus der Sidebar.
+
+## Whisper Modelle
+
+| Modell | Parameter | Relative Geschwindigkeit | Qualit?t |
+|--------|-----------|-------------------------|----------|
+| tiny   | 39M       | ~32x                   | ?????    |
+| base   | 74M       | ~16x                   | ?????    |
+| small  | 244M      | ~6x                    | ?????    |
+| medium | 769M      | ~2x                    | ?????    |
+| large  | 1550M     | 1x                     | ?????    |
+
+**Empfehlung**: 
+- F?r schnelle Transkriptionen: `base`
+- F?r beste Qualit?t: `medium` oder `large`
+
+## Ausgabeformate
+
+- **TXT**: Reiner Text ohne Zeitstempel
+- **SRT**: SubRip Untertitel-Format
+- **VTT**: WebVTT Untertitel-Format  
+- **JSON**: Vollst?ndige Daten mit Zeitstempeln und Konfidenz
 
 ## Troubleshooting
 
-### "yt-dlp nicht gefunden"
-```bash
-pip install yt-dlp
-```
-
-### "Whisper nicht gefunden"
+### "Whisper is not installed"
 ```bash
 pip install openai-whisper
 ```
 
-### "ffmpeg nicht gefunden"
-- Windows: Download von https://ffmpeg.org
-- Linux: `sudo apt install ffmpeg`
-- Mac: `brew install ffmpeg`
+### "yt-dlp is not installed"
+```bash
+pip install yt-dlp
+```
 
-### Speicherprobleme
-Verwenden Sie ein kleineres Modell (tiny oder base).
+### Speicherfehler bei gro?en Dateien
+Verwenden Sie ein kleineres Modell:
+```bash
+python scripts/transcribe.py "large_file.mp4" --model tiny
+```
 
-## Logs
+### YouTube-Download fehlgeschlagen
+- Pr?fen Sie die URL
+- Stellen Sie sicher, dass das Video ?ffentlich ist
+- Aktualisieren Sie yt-dlp: `pip install --upgrade yt-dlp`
 
-Alle Aktivit?ten werden in `logs/transkription.log` protokolliert.
+## Hinweise
+
+- Die erste Verwendung eines Modells l?dt es herunter (~50MB-1.5GB)
+- GPU-Beschleunigung wird automatisch verwendet, wenn verf?gbar
+- Lange Videos k?nnen mehrere Minuten dauern
+- Die Transkriptionsqualit?t h?ngt von der Audioqualit?t ab
+
+## Skripte
+
+- `transcribe.py` - Haupt-Transkriptionsskript
+- `postprocess.py` - Nachbearbeitung von Transkripten
+- `fix_names.py` - Korrektur von Eigennamen in Transkripten

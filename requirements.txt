@@ -26,3 +26,13 @@ netmiko>=4.2.0
 black>=23.7.0
 flake8>=6.1.0
 mypy>=1.5.0
+
+# Transcription tools (optional)
+# Uncomment to enable transcription features:
+# openai-whisper>=20230918
+# yt-dlp>=2023.7.6
+
+# AI/ML tools (optional)
+# Uncomment to enable AI features:
+# ollama>=0.1.8
+# langchain>=0.0.200
