@@ -1,6 +1,26 @@
 # MINTutil Docker Image
 # Copyright (c) 2025 MINT-RESEARCH
 
+# Multi-stage build for smaller final image
+FROM python:3.11-slim as builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    git \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /build
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+# Final stage
 FROM python:3.11-slim
 
 # Metadata
@@ -8,33 +28,45 @@ LABEL maintainer="MINT-RESEARCH <mint-research@neomint.com>"
 LABEL description="MINTutil - Modulare, intelligente Netzwerk-Tools"
 LABEL version="0.1.0"
 
-# Set working directory
-WORKDIR /app
-
-# Install system dependencies
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    ffmpeg \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy Python packages from builder
+COPY --from=builder /root/.local /root/.local
+
+# Set working directory
+WORKDIR /app
 
 # Copy application code
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p /app/logs /app/data /app/tools /app/scripts
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/logs /app/data /app/tools /app/scripts /app/config \
+    && chmod -R 755 /app
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app:$PYTHONPATH
+ENV PATH=/root/.local/bin:$PATH
 ENV STREAMLIT_SERVER_PORT=8501
 ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
+ENV STREAMLIT_SERVER_HEADLESS=true
+ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+
+# Create non-root user for security
+RUN useradd -m -u 1000 mintuser && chown -R mintuser:mintuser /app
+USER mintuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8501/_stcore/health || exit 1
 
 # Expose Streamlit port
 EXPOSE 8501
 
 # Run Streamlit app
-CMD ["streamlit", "run", "streamlit_app/main.py"]
+CMD ["streamlit", "run", "streamlit_app/main.py", "--server.maxUploadSize", "500"]
