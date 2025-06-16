@@ -1,29 +1,29 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    MINTutil System Health Check - Prueft Systemvoraussetzungen und Konfiguration
+    MINTutil System Health Check - Checks system requirements and configuration
 .DESCRIPTION
-    Fuehrt umfassende Systemchecks durch, um sicherzustellen, dass MINTutil
-    korrekt funktioniert. Unterstuetzt verschiedene Modi und automatische Reparatur.
+    Performs comprehensive system checks to ensure MINTutil works correctly.
+    Supports various modes and automatic repair.
 .PARAMETER Mode
-    Pruefungsmodus: quick, full, network, dependencies, logs
+    Check mode: quick, full, network, dependencies, logs
 .PARAMETER Fix
-    Aktiviert automatische Fehlerbehebung (Legacy, nutzt AutoFix)
+    Enables automatic error correction (Legacy, uses AutoFix)
 .PARAMETER AutoFix
-    Aktiviert automatische Fehlerbehebung
+    Enables automatic error correction
 .PARAMETER Export
-    Exportiert Health Report als Datei
+    Exports health report as file
 .PARAMETER Verbose
-    Zeigt detaillierte Informationen
+    Shows detailed information
 .PARAMETER Silent
-    Unterdrueckt Konsolenausgabe
+    Suppresses console output
 .EXAMPLE
     .\health_check.ps1
     .\health_check.ps1 -Mode full -AutoFix
     .\health_check.ps1 -Export
 .NOTES
-    Autor: MINTutil Team
-    Datum: 2024-01-01
+    Author: skr
+    Date: 2024-01-01
     Version: 2.0.0
 #>
 
@@ -37,12 +37,12 @@ param(
     [switch]$AutoFix = $false
 )
 
-# Exit-Codes
+# Exit codes
 $EXIT_SUCCESS = 0
 $EXIT_ERROR = 1
 $EXIT_CRITICAL = 2
 
-# Globale Variablen
+# Global variables
 $script:MintUtilRoot = Split-Path $PSScriptRoot -Parent
 $script:hasErrors = $false
 $script:hasCriticalErrors = $false
@@ -51,51 +51,51 @@ $script:Warnings = @()
 $script:Info = @()
 $script:ReportFile = Join-Path $script:MintUtilRoot "logs\health_report_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
 
-# Module laden
+# Load modules
 $modulePath = $PSScriptRoot
 . "$modulePath\health_check_logging.ps1"
 . "$modulePath\health_check_requirements.ps1"
 . "$modulePath\health_check_environment.ps1"
 
-# System-Info (Legacy)
+# System info (Legacy)
 function Test-SystemInfo {
-    Write-Header "System-Informationen"
+    Write-Header "System Information"
     
     # OS Info
     $os = Get-CimInstance Win32_OperatingSystem
     Add-Info "System" "OS: $($os.Caption) $($os.Version)"
-    Add-Info "System" "Architektur: $($os.OSArchitecture)"
+    Add-Info "System" "Architecture: $($os.OSArchitecture)"
     
     # PowerShell Version
     Add-Info "System" "PowerShell: $($PSVersionTable.PSVersion)"
     
-    # Speicher
+    # Memory
     $memory = Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
     $memoryGB = [Math]::Round($memory.Sum / 1GB, 2)
     Add-Info "System" "RAM: $memoryGB GB"
     
-    # Festplatte
+    # Disk
     $disk = Get-PSDrive -Name (Split-Path $script:MintUtilRoot -Qualifier).TrimEnd(':')
     if ($disk) {
         $freeGB = [Math]::Round($disk.Free / 1GB, 2)
         $usedGB = [Math]::Round($disk.Used / 1GB, 2)
-        Add-Info "System" "Festplatte: $usedGB GB belegt, $freeGB GB frei"
+        Add-Info "System" "Disk: $usedGB GB used, $freeGB GB free"
         
         if ($freeGB -lt 1) {
-            Add-Warning "System" "Wenig Festplattenspeicher verfuegbar" "Speicherplatz freigeben"
+            Add-Warning "System" "Low disk space available" "Free up disk space"
         }
     }
 }
 
-# Log-Analyse
+# Log analysis
 function Test-Logs {
     if ($Mode -ne 'full' -and $Mode -ne 'logs') { return }
     
-    Write-Header "Log-Analyse"
+    Write-Header "Log Analysis"
     
     $logsDir = Join-Path $script:MintUtilRoot "logs"
     if (-not (Test-Path $logsDir)) {
-        Add-Info "Logs" "Keine Logs vorhanden"
+        Add-Info "Logs" "No logs available"
         return
     }
     
@@ -106,55 +106,55 @@ function Test-Logs {
         $warnings = Select-String -Path $logFile.FullName -Pattern "WARNING|WARN" -CaseSensitive
         
         if ($errors.Count -gt 0) {
-            Add-Warning "Logs" "$($errors.Count) Fehler in $($logFile.Name)" "Log-Datei pruefen"
+            Add-Warning "Logs" "$($errors.Count) errors in $($logFile.Name)" "Check log file"
         }
         if ($warnings.Count -gt 0) {
-            Add-Info "Logs" "$($warnings.Count) Warnungen in $($logFile.Name)"
+            Add-Info "Logs" "$($warnings.Count) warnings in $($logFile.Name)"
         }
     }
 }
 
-# Zusammenfassung anzeigen
+# Show summary
 function Show-Summary {
-    Write-Header "Zusammenfassung"
+    Write-Header "Summary"
     
     if ($script:hasCriticalErrors) {
-        Write-Log "? KRITISCHE FEHLER gefunden!" "ERROR"
-        Write-Log "   MINTutil kann nicht gestartet werden." "ERROR"
-        Write-Log "   Bitte beheben Sie zuerst die kritischen Fehler." "ERROR"
+        Write-Log "? CRITICAL ERRORS found!" "ERROR"
+        Write-Log "   MINTutil cannot be started." "ERROR"
+        Write-Log "   Please fix critical errors first." "ERROR"
     } elseif ($script:hasErrors -or $script:Issues.Count -gt 0) {
-        Write-Log "?  WARNUNGEN gefunden!" "WARNING"
-        Write-Log "   MINTutil kann mit Einschraenkungen gestartet werden." "WARNING"
-        Write-Log "   Einige Features koennten nicht verfuegbar sein." "WARNING"
+        Write-Log "?  WARNINGS found!" "WARNING"
+        Write-Log "   MINTutil can be started with limitations." "WARNING"
+        Write-Log "   Some features might not be available." "WARNING"
     } else {
-        Write-Log "? Alle Checks erfolgreich!" "SUCCESS"
-        Write-Log "   MINTutil ist bereit zur Verwendung." "SUCCESS"
+        Write-Log "? All checks passed!" "SUCCESS"
+        Write-Log "   MINTutil is ready to use." "SUCCESS"
     }
     
-    # Naechste Schritte
+    # Next steps
     if (-not $script:hasCriticalErrors) {
         if (-not $Silent) {
-            Write-Host "`nNaechste Schritte:" -ForegroundColor Cyan
+            Write-Host "`nNext steps:" -ForegroundColor Cyan
             
             if (-not $env:VIRTUAL_ENV) {
-                Write-Host "  1. Virtual Environment aktivieren: .\venv\Scripts\Activate.ps1" -ForegroundColor Yellow
+                Write-Host "  1. Activate virtual environment: .\venv\Scripts\Activate.ps1" -ForegroundColor Yellow
             }
             
             if ($script:hasErrors -or $script:Issues.Count -gt 0) {
-                Write-Host "  2. Beheben Sie die Warnungen fuer volle Funktionalitaet" -ForegroundColor Yellow
+                Write-Host "  2. Fix warnings for full functionality" -ForegroundColor Yellow
             }
             
-            Write-Host "  3. MINTutil starten: .\mint.ps1 start" -ForegroundColor Green
+            Write-Host "  3. Start MINTutil: .\mint.ps1 start" -ForegroundColor Green
         }
     }
     
-    # Log-Hinweis
+    # Log note
     if (-not $Silent) {
-        Write-Host "`nDetaillierte Logs finden Sie in: $script:logFile" -ForegroundColor DarkGray
+        Write-Host "`nDetailed logs can be found in: $script:logFile" -ForegroundColor DarkGray
     }
 }
 
-# Report anzeigen (Legacy)
+# Show report (Legacy)
 function Show-Report {
     $totalIssues = $script:Issues.Count + $script:Warnings.Count
     
@@ -167,45 +167,45 @@ function Show-Report {
     
     if ($script:Issues.Count -eq 0 -and $script:Warnings.Count -eq 0) {
         if (-not $Silent) {
-            Write-Host "`n? System ist gesund!" -ForegroundColor Green
-            Write-Host "   Keine Probleme gefunden." -ForegroundColor Green
+            Write-Host "`n? System is healthy!" -ForegroundColor Green
+            Write-Host "   No issues found." -ForegroundColor Green
         }
     } else {
         if ($script:Issues.Count -gt 0) {
             if (-not $Silent) {
-                Write-Host "`n? Fehler: $($script:Issues.Count)" -ForegroundColor Red
+                Write-Host "`n? Errors: $($script:Issues.Count)" -ForegroundColor Red
             }
         }
         if ($script:Warnings.Count -gt 0) {
             if (-not $Silent) {
-                Write-Host "?  Warnungen: $($script:Warnings.Count)" -ForegroundColor Yellow
+                Write-Host "?  Warnings: $($script:Warnings.Count)" -ForegroundColor Yellow
             }
         }
     }
     
     # Details
     if ($script:Issues.Count -gt 0 -and -not $Silent) {
-        Write-Host "`n? Fehler:" -ForegroundColor Red
+        Write-Host "`n? Errors:" -ForegroundColor Red
         foreach ($issue in $script:Issues) {
             Write-Host "   [$($issue.Category)] $($issue.Message)" -ForegroundColor Red
             if ($issue.Solution) {
-                Write-Host "      ? Loesung: $($issue.Solution)" -ForegroundColor DarkGray
+                Write-Host "      ? Solution: $($issue.Solution)" -ForegroundColor DarkGray
             }
         }
     }
     
     if ($script:Warnings.Count -gt 0 -and -not $Silent) {
-        Write-Host "`n? Warnungen:" -ForegroundColor Yellow  
+        Write-Host "`n? Warnings:" -ForegroundColor Yellow  
         foreach ($warning in $script:Warnings) {
             Write-Host "   [$($warning.Category)] $($warning.Message)" -ForegroundColor Yellow
             if ($warning.Solution) {
-                Write-Host "      ? Empfehlung: $($warning.Solution)" -ForegroundColor DarkGray
+                Write-Host "      ? Recommendation: $($warning.Solution)" -ForegroundColor DarkGray
             }
         }
     }
     
     if ($Verbose -and $script:Info.Count -gt 0 -and -not $Silent) {
-        Write-Host "`n? Informationen:" -ForegroundColor Cyan
+        Write-Host "`n? Information:" -ForegroundColor Cyan
         foreach ($info in $script:Info) {
             Write-Host "   [$($info.Category)] $($info.Message)" -ForegroundColor Cyan
         }
@@ -217,61 +217,61 @@ function Show-Report {
     }
 }
 
-# Report exportieren
+# Export report
 function Export-Report {
     $report = @()
     $report += "MINTutil Health Report"
     $report += "=" * 50
-    $report += "Datum: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-    $report += "Modus: $Mode"
+    $report += "Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+    $report += "Mode: $Mode"
     $report += ""
     
-    # Alle Eintraege
+    # All entries
     $allEntries = $script:Issues + $script:Warnings + $script:Info | Sort-Object Severity, Category
     
     foreach ($entry in $allEntries) {
         $report += "[$($entry.Severity)] [$($entry.Category)] $($entry.Message)"
         if ($entry.Solution) {
-            $report += "    Loesung: $($entry.Solution)"
+            $report += "    Solution: $($entry.Solution)"
         }
     }
     
-    # Speichern
+    # Save
     $logDir = Split-Path $script:ReportFile -Parent
     if (-not (Test-Path $logDir)) {
         New-Item -ItemType Directory -Path $logDir -Force | Out-Null
     }
     
     $report | Out-File -FilePath $script:ReportFile -Encoding UTF8
-    Write-Log "Report exportiert: $script:ReportFile" "SUCCESS"
+    Write-Log "Report exported: $script:ReportFile" "SUCCESS"
 }
 
 # AutoFix (Legacy)
 function Invoke-AutoFix {
-    # Bereits in einzelnen Check-Funktionen integriert
+    # Already integrated into individual check functions
     if (-not ($Fix -or $AutoFix)) { return }
     if ($script:Issues.Count -eq 0) { return }
     
-    Write-Header "Automatische Fehlerbehebung"
-    Write-Log "AutoFix ist in die einzelnen Check-Funktionen integriert" "INFO"
+    Write-Header "Automatic Error Correction"
+    Write-Log "AutoFix is integrated into individual check functions" "INFO"
 }
 
-# Hauptfunktion
+# Main function
 function Start-HealthCheck {
     Initialize-Logging
-    Write-Log "=== MINTutil Health Check gestartet ===" "INFO"
+    Write-Log "=== MINTutil Health Check started ===" "INFO"
     
     if (-not $Silent) {
         Write-Host "? MINTutil System Health Check" -ForegroundColor Cyan
         Write-Host "?" * 50 -ForegroundColor DarkGray
-        Write-Host "Modus: $Mode" -ForegroundColor DarkGray
+        Write-Host "Mode: $Mode" -ForegroundColor DarkGray
         if ($AutoFix -or $Fix) {
-            Write-Host "AutoFix: Aktiviert" -ForegroundColor Yellow
+            Write-Host "AutoFix: Enabled" -ForegroundColor Yellow
         }
         Write-Host ""
     }
     
-    # Fuehre Tests durch
+    # Run tests
     Test-SystemInfo
     
     if ($Mode -eq 'quick' -or $Mode -eq 'full') {
@@ -296,31 +296,31 @@ function Start-HealthCheck {
         Test-Logs
     }
     
-    # Zeige Report
+    # Show report
     Show-Report
     Show-Summary
     
-    # Exit-Code bestimmen
+    # Determine exit code
     if ($script:hasCriticalErrors) {
-        Write-Log "Health Check mit kritischen Fehlern beendet" "ERROR"
+        Write-Log "Health Check ended with critical errors" "ERROR"
         exit $EXIT_CRITICAL
     } elseif ($script:hasErrors -or $script:Issues.Count -gt 0) {
-        Write-Log "Health Check mit Fehlern beendet" "WARNING"
+        Write-Log "Health Check ended with errors" "WARNING"
         exit $EXIT_ERROR
     } else {
-        Write-Log "Health Check erfolgreich beendet" "SUCCESS"
+        Write-Log "Health Check completed successfully" "SUCCESS"
         exit $EXIT_SUCCESS
     }
 }
 
-# Hauptprogramm
+# Main program
 try {
-    # Fuer Kompatibilitaet mit Legacy-Code
+    # For compatibility with legacy code
     if ($Fix) { $AutoFix = $true }
     
     Start-HealthCheck
 } catch {
-    Write-Log "Fehler waehrend der Diagnose: $($_.Exception.Message)" "ERROR"
+    Write-Log "Error during diagnostics: $($_.Exception.Message)" "ERROR"
     
     if ($Verbose -and -not $Silent) {
         Write-Host "`nDetails:" -ForegroundColor DarkGray
