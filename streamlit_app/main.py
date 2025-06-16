@@ -1,3 +1,18 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+MINTutil Main Application Interface
+
+Central Streamlit application that provides a modular interface for various
+utility and analysis tools. Handles tool loading, navigation, and system
+management features.
+
+Author: MINT-RESEARCH Team
+Date: 2025-06-16
+Version: 0.1.0
+Dependencies: streamlit, pathlib
+"""
+
 import streamlit as st
 from pathlib import Path
 import sys
@@ -10,14 +25,19 @@ sys.path.append(str(Path(__file__).parent.parent))
 from streamlit_app.page_loader import PageLoader
 
 def initialize_session_state():
-    """Initialize session state variables"""
+    """Initialize session state variables for maintaining app state."""
     if 'selected_tool' not in st.session_state:
         st.session_state.selected_tool = None
     if 'page_loader' not in st.session_state:
         st.session_state.page_loader = PageLoader()
 
 def render_sidebar():
-    """Render the sidebar with tool selection"""
+    """
+    Render the sidebar with tool selection and system options.
+    
+    Returns:
+        str or None: Selected tool ID or system option
+    """
     with st.sidebar:
         # Logo or header
         logo_path = Path(__file__).parent.parent / "assets" / "logo.png"
@@ -35,7 +55,7 @@ def render_sidebar():
             st.warning("Keine Tools gefunden")
             return None
         
-        st.markdown("### ?? Verf?gbare Tools")
+        st.markdown("### ? Verf?gbare Tools")
         
         # Tool selection
         selected = None
@@ -52,7 +72,7 @@ def render_sidebar():
             ):
                 selected = tool_id
                 
-        # Footer
+        # Footer with system options
         st.markdown("---")
         st.markdown("### ? System")
         if st.button("? Health Check", use_container_width=True):
@@ -69,7 +89,7 @@ def render_sidebar():
         return selected
 
 def render_main_content():
-    """Render the main content area"""
+    """Render the main content area based on selected tool or system option."""
     if st.session_state.selected_tool is None:
         # Welcome screen
         st.title("? Willkommen bei MINTutil")
@@ -87,7 +107,7 @@ def render_main_content():
         - **Lokale Verarbeitung**: Ihre Daten bleiben bei Ihnen
         """)
         
-        # Quick stats
+        # Quick stats dashboard
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Verf?gbare Tools", len(st.session_state.page_loader.get_available_tools()))
@@ -117,7 +137,7 @@ def render_main_content():
             st.session_state.selected_tool = None
 
 def render_health_check():
-    """Render system health check"""
+    """Render comprehensive system health check page."""
     st.title("? System Health Check")
     
     with st.spinner("F?hre Health Check durch..."):
@@ -130,7 +150,7 @@ def render_health_check():
         with col2:
             st.metric("Streamlit Version", st.__version__, "?")
         
-        # Check directories
+        # Check critical directories
         st.subheader("? Verzeichnisse")
         dirs_to_check = ["tools", "data", "logs", "config"]
         for dir_name in dirs_to_check:
@@ -140,7 +160,7 @@ def render_health_check():
             else:
                 st.error(f"? {dir_name}/ - Fehlt")
         
-        # Check environment
+        # Check environment variables
         st.subheader("? Umgebungsvariablen")
         env_vars = ["APP_NAME", "APP_VERSION", "ENVIRONMENT"]
         for var in env_vars:
@@ -151,7 +171,7 @@ def render_health_check():
                 st.warning(f"?? {var}: {value}")
 
 def render_logs():
-    """Render system logs"""
+    """Render system logs viewer with filtering and download options."""
     st.title("? System Logs")
     
     log_dir = Path(__file__).parent.parent / "logs"
@@ -159,7 +179,7 @@ def render_logs():
         st.warning("Kein Logs-Verzeichnis gefunden")
         return
     
-    # Get log files
+    # Get available log files
     log_files = list(log_dir.glob("*.log"))
     if not log_files:
         st.info("Keine Log-Dateien vorhanden")
@@ -173,12 +193,12 @@ def render_logs():
     )
     
     if selected_log:
-        # Read and display log
+        # Read and display log content
         try:
             with open(selected_log, 'r', encoding='utf-8') as f:
                 log_content = f.read()
             
-            # Show last N lines
+            # Show last N lines with slider control
             lines = log_content.strip().split('\n')
             num_lines = st.slider("Anzahl Zeilen", 10, 100, 50)
             
@@ -188,9 +208,9 @@ def render_logs():
                 height=400
             )
             
-            # Download button
+            # Download button for full log
             st.download_button(
-                "?? Log herunterladen",
+                "? Log herunterladen",
                 log_content,
                 file_name=f"{selected_log.name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
                 mime="text/plain"
@@ -200,7 +220,7 @@ def render_logs():
             st.error(f"Fehler beim Lesen der Log-Datei: {str(e)}")
 
 def render_settings():
-    """Render settings page"""
+    """Render application settings page."""
     st.title("?? Einstellungen")
     
     # Theme settings
@@ -211,18 +231,18 @@ def render_settings():
     st.subheader("? Sprache")
     language = st.selectbox("Sprache", ["Deutsch", "English"])
     
-    # Advanced settings
+    # Advanced settings in expander
     with st.expander("? Erweiterte Einstellungen"):
         st.checkbox("Debug-Modus aktivieren")
         st.checkbox("Automatische Updates")
         st.number_input("Cache-Gr??e (MB)", min_value=100, max_value=10000, value=1000)
     
-    # Save button
+    # Save button with primary styling
     if st.button("? Einstellungen speichern", type="primary"):
         st.success("Einstellungen gespeichert!")
 
 def main():
-    """Main application entry point"""
+    """Main application entry point with page configuration and routing."""
     st.set_page_config(
         page_title="MINTutil",
         page_icon="?",
@@ -230,7 +250,7 @@ def main():
         initial_sidebar_state="expanded"
     )
     
-    # Custom CSS
+    # Custom CSS for improved UI
     st.markdown("""
     <style>
     .stButton > button {
@@ -246,13 +266,13 @@ def main():
     # Initialize session state
     initialize_session_state()
     
-    # Render sidebar and get selection
+    # Render sidebar and handle navigation
     selected = render_sidebar()
     if selected is not None:
         st.session_state.selected_tool = selected
         st.rerun()
     
-    # Render main content
+    # Render main content based on selection
     render_main_content()
 
 if __name__ == "__main__":
