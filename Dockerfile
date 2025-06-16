@@ -13,11 +13,13 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
-WORKDIR /build
+# Create non-root user for building
+RUN useradd -m -u 1000 mintbuilder
+USER mintbuilder
+WORKDIR /home/mintbuilder/build
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
+# Copy requirements and install Python dependencies as user
+COPY --chown=mintbuilder:mintbuilder requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
 # Final stage
@@ -35,31 +37,34 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python packages from builder
-COPY --from=builder /root/.local /root/.local
+# Create non-root user for runtime
+RUN useradd -m -u 1000 mintuser
 
 # Set working directory
 WORKDIR /app
 
-# Copy application code
-COPY . .
+# Copy Python packages from builder
+COPY --from=builder --chown=mintuser:mintuser /home/mintbuilder/.local /home/mintuser/.local
+
+# Copy application code with correct ownership
+COPY --chown=mintuser:mintuser . .
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/logs /app/data /app/tools /app/scripts /app/config \
+    && chown -R mintuser:mintuser /app \
     && chmod -R 755 /app
+
+# Switch to non-root user
+USER mintuser
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app:$PYTHONPATH
-ENV PATH=/root/.local/bin:$PATH
+ENV PATH=/home/mintuser/.local/bin:$PATH
 ENV STREAMLIT_SERVER_PORT=8501
 ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
 ENV STREAMLIT_SERVER_HEADLESS=true
 ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
-
-# Create non-root user for security
-RUN useradd -m -u 1000 mintuser && chown -R mintuser:mintuser /app
-USER mintuser
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
