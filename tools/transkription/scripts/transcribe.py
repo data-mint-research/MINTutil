@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+MINTutil Transkriptions-Tool
+
+Copyright (c) 2025 MINT-RESEARCH
+Contact: mint-research@neomint.com
+
 Transkriptions-Script f?r MINTutil
 Unterst?tzt YouTube-Videos und lokale Audio/Video-Dateien
 """
