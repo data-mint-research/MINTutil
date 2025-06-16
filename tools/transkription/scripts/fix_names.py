@@ -1,242 +1,179 @@
-#!/usr/bin/env python3
 """
-Name Fixing Module
-Corrects names and terms in transcript based on glossary
+Fix names in transcripts using a glossary
 """
-
 import json
 import re
 from pathlib import Path
-from typing import Dict, Optional
-import logging
+from typing import Dict, List, Tuple
 
-logger = logging.getLogger(__name__)
 
-def load_glossary() -> Dict[str, str]:
+def load_glossary(glossary_path: str = None) -> Dict[str, str]:
     """
-    Load glossary from JSON file
+    Load name glossary from JSON file
+    
+    Args:
+        glossary_path: Path to glossary JSON file
     
     Returns:
-        Dictionary mapping incorrect spellings to correct ones
+        Dictionary mapping incorrect names to correct names
     """
-    glossary_path = Path(__file__).parent.parent / "config" / "glossar.json"
+    if glossary_path is None:
+        glossary_path = Path(__file__).parent.parent / "config" / "glossar.json"
+    
+    glossary_path = Path(glossary_path)
     
     if not glossary_path.exists():
-        logger.warning(f"Glossary not found at {glossary_path}, creating empty glossary")
-        glossary_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Create default glossary
-        default_glossary = {
-            # Common AI/Tech terms
-            "chat gpt": "ChatGPT",
-            "chat-gpt": "ChatGPT",
-            "open ai": "OpenAI",
-            "open-ai": "OpenAI",
-            "hugging face": "Hugging Face",
-            "huggingface": "Hugging Face",
-            "github": "GitHub",
-            "git hub": "GitHub",
-            "google": "Google",
-            "microsoft": "Microsoft",
-            "meta": "Meta",
-            "anthropic": "Anthropic",
-            
-            # Common German terms
-            "ki": "KI",
-            "k?nstliche intelligenz": "K?nstliche Intelligenz",
-            
-            # Programming terms
-            "python": "Python",
-            "java script": "JavaScript",
-            "javascript": "JavaScript",
-            "type script": "TypeScript",
-            "typescript": "TypeScript",
-            "docker": "Docker",
-            "kubernetes": "Kubernetes",
-            "k8s": "Kubernetes",
-            
-            # Social Media
-            "youtube": "YouTube",
-            "you tube": "YouTube",
-            "twitter": "Twitter",
-            "x.com": "X.com",
-            "linkedin": "LinkedIn",
-            "linked in": "LinkedIn",
-            "instagram": "Instagram",
-            "tiktok": "TikTok",
-            "tik tok": "TikTok"
-        }
-        
-        with open(glossary_path, 'w', encoding='utf-8') as f:
-            json.dump(default_glossary, f, ensure_ascii=False, indent=2)
-        
-        return default_glossary
+        print(f"Glossary not found at {glossary_path}, using empty glossary")
+        return {}
     
     try:
         with open(glossary_path, 'r', encoding='utf-8') as f:
             glossary = json.load(f)
-        logger.info(f"Loaded glossary with {len(glossary)} entries")
+        print(f"Loaded {len(glossary)} entries from glossary")
         return glossary
     except Exception as e:
-        logger.error(f"Error loading glossary: {str(e)}")
+        print(f"Error loading glossary: {e}")
         return {}
 
-def fix_names_in_transcript(transcript_path: Path) -> Path:
-    """
-    Fix names and terms in transcript using glossary
-    
-    Args:
-        transcript_path: Path to original transcript
-        
-    Returns:
-        Path to fixed transcript
-    """
-    logger.info(f"Fixing names in transcript: {transcript_path}")
-    
-    # Load glossary
-    glossary = load_glossary()
-    
-    if not glossary:
-        logger.warning("No glossary entries found, returning original transcript")
-        return transcript_path
-    
-    # Read transcript
-    try:
-        with open(transcript_path, 'r', encoding='utf-8') as f:
-            text = f.read()
-    except Exception as e:
-        logger.error(f"Error reading transcript: {str(e)}")
-        return transcript_path
-    
-    # Apply fixes
-    fixed_text = apply_glossary_fixes(text, glossary)
-    
-    # Save fixed transcript
-    fixed_dir = Path(__file__).parent.parent / "data" / "fixed"
-    fixed_dir.mkdir(parents=True, exist_ok=True)
-    
-    fixed_path = fixed_dir / f"fixed_{transcript_path.name}"
-    
-    try:
-        with open(fixed_path, 'w', encoding='utf-8') as f:
-            f.write(fixed_text)
-        logger.info(f"Saved fixed transcript to: {fixed_path}")
-        return fixed_path
-    except Exception as e:
-        logger.error(f"Error saving fixed transcript: {str(e)}")
-        return transcript_path
 
-def apply_glossary_fixes(text: str, glossary: Dict[str, str]) -> str:
+def create_replacement_patterns(glossary: Dict[str, str]) -> List[Tuple[re.Pattern, str]]:
     """
-    Apply glossary fixes to text
+    Create regex patterns for name replacement
     
     Args:
-        text: Original text
-        glossary: Dictionary of replacements
-        
+        glossary: Dictionary of name mappings
+    
     Returns:
-        Fixed text
+        List of (pattern, replacement) tuples
+    """
+    patterns = []
+    
+    for incorrect, correct in glossary.items():
+        # Create pattern that matches word boundaries
+        # Case-insensitive matching
+        pattern = re.compile(r'\b' + re.escape(incorrect) + r'\b', re.IGNORECASE)
+        patterns.append((pattern, correct))
+    
+    return patterns
+
+
+def fix_names_in_text(text: str, patterns: List[Tuple[re.Pattern, str]]) -> str:
+    """
+    Fix names in text using replacement patterns
+    
+    Args:
+        text: Input text
+        patterns: List of (pattern, replacement) tuples
+    
+    Returns:
+        Text with fixed names
     """
     fixed_text = text
     replacements_made = 0
     
-    # Sort glossary by key length (longest first) to avoid partial replacements
-    sorted_glossary = sorted(glossary.items(), key=lambda x: len(x[0]), reverse=True)
-    
-    for incorrect, correct in sorted_glossary:
-        # Create case-insensitive pattern with word boundaries
-        # This ensures we match whole words/phrases only
-        pattern = r'\b' + re.escape(incorrect) + r'\b'
-        
+    for pattern, replacement in patterns:
         # Count replacements
-        matches = re.findall(pattern, fixed_text, re.IGNORECASE)
-        if matches:
-            replacements_made += len(matches)
-            logger.debug(f"Replacing {len(matches)} instances of '{incorrect}' with '{correct}'")
+        matches = pattern.findall(fixed_text)
+        replacements_made += len(matches)
         
-        # Perform replacement preserving case where possible
-        def replace_preserve_case(match):
-            original = match.group(0)
-            
-            # If original is all uppercase, return correct in uppercase
-            if original.isupper():
-                return correct.upper()
-            
-            # If original is title case, return correct in title case
-            if original[0].isupper() and original[1:].islower():
-                return correct[0].upper() + correct[1:]
-            
-            # Otherwise return correct as-is
-            return correct
-        
-        fixed_text = re.sub(pattern, replace_preserve_case, fixed_text, flags=re.IGNORECASE)
+        # Replace all occurrences
+        fixed_text = pattern.sub(replacement, fixed_text)
     
-    logger.info(f"Made {replacements_made} replacements")
+    if replacements_made > 0:
+        print(f"Made {replacements_made} replacements")
+    
     return fixed_text
 
-def add_to_glossary(incorrect: str, correct: str) -> bool:
-    """
-    Add entry to glossary
-    
-    Args:
-        incorrect: Incorrect spelling
-        correct: Correct spelling
-        
-    Returns:
-        True if successful
-    """
-    glossary = load_glossary()
-    glossary[incorrect] = correct
-    
-    glossary_path = Path(__file__).parent.parent / "config" / "glossar.json"
-    
-    try:
-        with open(glossary_path, 'w', encoding='utf-8') as f:
-            json.dump(glossary, f, ensure_ascii=False, indent=2)
-        logger.info(f"Added to glossary: '{incorrect}' -> '{correct}'")
-        return True
-    except Exception as e:
-        logger.error(f"Error saving glossary: {str(e)}")
-        return False
 
-def remove_from_glossary(incorrect: str) -> bool:
+def fix_names_in_transcript(transcript_path: str, glossary_path: str = None) -> str:
     """
-    Remove entry from glossary
+    Fix names in a transcript file
     
     Args:
-        incorrect: Key to remove
-        
-    Returns:
-        True if successful
-    """
-    glossary = load_glossary()
+        transcript_path: Path to transcript file
+        glossary_path: Optional path to glossary file
     
-    if incorrect in glossary:
-        del glossary[incorrect]
-        
-        glossary_path = Path(__file__).parent.parent / "config" / "glossar.json"
-        
+    Returns:
+        Path to fixed transcript file
+    """
+    transcript_path = Path(transcript_path)
+    
+    if not transcript_path.exists():
+        raise FileNotFoundError(f"Transcript not found: {transcript_path}")
+    
+    # Load glossary
+    glossary = load_glossary(glossary_path)
+    
+    if not glossary:
+        print("No glossary entries, returning original transcript")
+        return str(transcript_path)
+    
+    # Create patterns
+    patterns = create_replacement_patterns(glossary)
+    
+    # Read transcript
+    with open(transcript_path, 'r', encoding='utf-8') as f:
+        text = f.read()
+    
+    # Fix names
+    fixed_text = fix_names_in_text(text, patterns)
+    
+    # Save fixed transcript
+    output_dir = transcript_path.parent.parent / "fixed"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    output_path = output_dir / f"fixed_{transcript_path.name}"
+    
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(fixed_text)
+    
+    print(f"Fixed transcript saved to: {output_path}")
+    return str(output_path)
+
+
+def batch_fix_transcripts(transcript_dir: str, glossary_path: str = None):
+    """
+    Fix names in all transcripts in a directory
+    
+    Args:
+        transcript_dir: Directory containing transcript files
+        glossary_path: Optional path to glossary file
+    """
+    transcript_dir = Path(transcript_dir)
+    
+    if not transcript_dir.exists():
+        raise FileNotFoundError(f"Directory not found: {transcript_dir}")
+    
+    # Find all .txt files
+    transcript_files = list(transcript_dir.glob("*.txt"))
+    
+    if not transcript_files:
+        print(f"No transcript files found in {transcript_dir}")
+        return
+    
+    print(f"Found {len(transcript_files)} transcript files")
+    
+    # Process each file
+    for transcript_path in transcript_files:
         try:
-            with open(glossary_path, 'w', encoding='utf-8') as f:
-                json.dump(glossary, f, ensure_ascii=False, indent=2)
-            logger.info(f"Removed from glossary: '{incorrect}'")
-            return True
+            print(f"\nProcessing: {transcript_path.name}")
+            fix_names_in_transcript(str(transcript_path), glossary_path)
         except Exception as e:
-            logger.error(f"Error saving glossary: {str(e)}")
-            return False
-    else:
-        logger.warning(f"Entry not found in glossary: '{incorrect}'")
-        return False
+            print(f"Error processing {transcript_path.name}: {e}")
+
 
 if __name__ == "__main__":
-    # Test with sample transcript
+    # Example usage
     import sys
+    
     if len(sys.argv) > 1:
-        transcript_path = Path(sys.argv[1])
-        if transcript_path.exists():
-            fixed_path = fix_names_in_transcript(transcript_path)
-            print(f"Fixed transcript saved to: {fixed_path}")
-        else:
-            print(f"File not found: {transcript_path}")
+        transcript_path = sys.argv[1]
+        glossary_path = sys.argv[2] if len(sys.argv) > 2 else None
+        
+        try:
+            fixed_path = fix_names_in_transcript(transcript_path, glossary_path)
+            print(f"Success! Fixed transcript at: {fixed_path}")
+        except Exception as e:
+            print(f"Error: {e}")
     else:
-        print("Usage: python fix_names.py <transcript_path>")
+        print("Usage: python fix_names.py <transcript_path> [glossary_path]")
