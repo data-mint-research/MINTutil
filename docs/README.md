@@ -4,12 +4,31 @@ Welcome to the MINTutil documentation. This directory contains comprehensive gui
 
 ## ? Documentation Structure
 
+### Core Documentation
 - [Installation Guide](installation.md) - Detailed installation instructions
-- [User Guide](user-guide.md) - How to use MINTutil
-- [Developer Guide](developer-guide.md) - Guide for developers and contributors
-- [API Reference](api-reference.md) - API documentation
+- [Quick Start](QUICK_START.md) - Get started quickly
 - [Tool Development](tool-development.md) - How to create new tools
-- [Troubleshooting](troubleshooting.md) - Common issues and solutions
+- [Windows Installation](INSTALLATION_WINDOWS.md) - Windows-specific setup
+
+### Standards & Compliance
+- [NeoMINT Coding Practices](neomint-coding-practices.md) - Our coding standards
+- [Abweichungen (Deviations)](abweichungen.md) - Documented deviations from standards
+- [Code Review Fixes](CODE_REVIEW_FIXES.md) - Code review documentation
+
+## ? Development Standards
+
+This project follows the NeoMINT Coding Practices v0.1:
+- Maximum 500 LOC per file
+- PascalCase for functions
+- kebab-case for filenames
+- Central logging with Write-Log
+- No umlauts or special characters in code
+- Complete documentation in /docs/
+
+Run compliance check before committing:
+```powershell
+.\scripts\check-neomint-compliance.ps1
+```
 
 ## ? Quick Links
 
