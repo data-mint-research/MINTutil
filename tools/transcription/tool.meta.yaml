@@ -1,0 +1,9 @@
+name: YouTube Transcription
+description: Transcribes YouTube videos with Whisper and corrects names using a glossary
+icon: mic
+version: 1.0.0
+author: MINTutil Team
+dependencies:
+  - yt-dlp
+  - whisper
+  - docker

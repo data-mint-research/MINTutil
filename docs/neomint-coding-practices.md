@@ -1,6 +1,6 @@
-# LLM Digest ? NeoMINT Coding Practices (v0.2)
+# NeoMINT Coding Practices (v0.3)
 
-These rules apply without exception to all code units that you generate, review, or process:
+These rules apply without exception to all code units and documentation that you generate, review, or process:
 
 ---
 
@@ -34,10 +34,38 @@ These rules apply without exception to all code units that you generate, review,
 - Every `.ps1` contains header with purpose, author, date
 - No distributed `README.md` ? everything under `/docs/`
 - Deviations **always double documented** (in code + in `/docs/deviations.md`)
+- **Professional documentation design** following [Documentation Design Standards](docs/documentation-design-standards.md)
 
 ---
 
-## 5. Security
+## 5. Professional Documentation Standards
+
+### Visual Design
+- **No decorative emojis** in headings or technical content
+- **Clean typography** with consistent markdown formatting
+- **Professional appearance** suitable for enterprise environments
+- **Status indicators** use text or minimal symbols (? ? ?? only)
+
+### Structure Requirements
+- **Consistent heading hierarchy** (H1 for title, H2 for major sections)
+- **Descriptive section titles** without emoji decoration
+- **Clear navigation** with logical content organization
+- **Professional tone** throughout all documentation
+
+### Content Standards
+- **Code blocks** always specify language
+- **Links** use descriptive text, not "here" or "click this"
+- **Lists** maintain parallel structure
+- **Tables** include headers and consistent formatting
+
+### Enforcement
+- Documentation must pass professional review standard
+- Would this represent the project well to enterprise clients?
+- All docs follow the [Documentation Design Standards](docs/documentation-design-standards.md)
+
+---
+
+## 6. Security
 - Check OWASP + CIS Benchmark **before implementation**
 - No security-relevant workarounds
 - Logs **never** contain tokens or passwords
@@ -45,7 +73,7 @@ These rules apply without exception to all code units that you generate, review,
 
 ---
 
-## 6. Version Control
+## 7. Version Control
 - Only working code is committed
 - Temporary branches must be recognizable (`temp/debug-*`)
 - Never secrets in repos
@@ -53,21 +81,21 @@ These rules apply without exception to all code units that you generate, review,
 
 ---
 
-## 7. Behavior
+## 8. Behavior
 - Developers are responsible for comprehensibility
 - Every `TODO` is concrete, visible, and actionable
 - If you break a rule: **justify it visibly and in writing**
 
 ---
 
-## 8. AI Compatibility
+## 9. AI Compatibility
 - You work for humans **and** machines
 - Write everything so that other LLMs can analyze, modify, and correctly continue it
 - Don't repeat information, but structure it so that it's **completely** readable
 
 ---
 
-## 9. Metadata Blocks & Comments
+## 10. Metadata Blocks & Comments
 
 ### Metadata Block Standards
 Every script MUST start with a proper metadata block following these industry standards:
@@ -98,6 +126,7 @@ Every script MUST start with a proper metadata block following these industry st
 ```python
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
 Module Name: Brief description
 
@@ -175,13 +204,31 @@ Every function must have documentation explaining:
 7. **Header**: Every script file has complete metadata block
 8. **Comments**: All complex logic has explanatory comments
 9. **TODOs**: All TODOs are concrete and traceable
+10. **Documentation**: Follows professional design standards without decorative emojis
+
+### Documentation Review Checkpoints
+1. **Professional appearance**: No decorative emojis in headings
+2. **Consistent structure**: Proper heading hierarchy
+3. **Clear navigation**: Logical organization
+4. **Professional tone**: Suitable for enterprise environments
+5. **Code formatting**: All code blocks specify language
+6. **Link quality**: Descriptive link text
+7. **Table formatting**: Headers and consistent structure
 
 ### Verification Tools
 - `scripts/check-neomint-compliance.ps1` - Automatic verification
 - `docs/deviations.md` - Documented exceptions
 - GitHub Actions for automatic validation
+- Documentation design standards enforcement
 
 ### For Questions or Uncertainties
 - Create issue in repository
+- Reference [Documentation Design Standards](docs/documentation-design-standards.md)
 - Convene team meeting
 - Extend documentation
+
+---
+
+**Version**: 0.3  
+**Last Updated**: 2025-06-17  
+**Changes**: Added professional documentation standards and emoji restrictions
