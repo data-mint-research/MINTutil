@@ -1,4 +1,4 @@
-# LLM Digest ? NeoMINT Coding Practices (v0.2)
+# LLM Digest ? NeoMINT Coding Practices (v0.3)
 
 These rules apply without exception to all code units that you generate, review, or process:
 
@@ -98,6 +98,7 @@ Every script MUST start with a proper metadata block following these industry st
 ```python
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
 Module Name: Brief description
 
@@ -163,6 +164,71 @@ Every function must have documentation explaining:
 
 ---
 
+## 10. Problem Analysis & Solution Design (MECE Principle)
+
+### MECE Requirement
+All analysis, categorization, and architectural decisions must follow **MECE** principles:
+- **Mutually Exclusive**: No overlap between categories/components
+- **Collectively Exhaustive**: Complete coverage of the problem space
+
+### Application Areas
+- **Architecture design**: Component separation and responsibility allocation
+- **Script organization**: Function grouping and module boundaries  
+- **Problem analysis**: Issue categorization and solution approaches
+- **Documentation structure**: Information organization and classification
+- **Code reviews**: Systematic evaluation criteria
+
+### MECE Implementation Standards
+
+#### Good MECE Example - Script Categories:
+```
+Category A: Core Operations (Keep)
+??? A1. Health Check System (4 scripts)
+??? A2. Lifecycle Management (3 scripts)  
+??? A3. Initialization System (3 scripts)
+
+Category B: Obsolete Scripts (Delete)
+??? B1. Migration Tools (2 scripts)
+??? B2. Unnecessary Wrappers (1 script)
+
+Category C: Conditional Scripts (Review)
+??? C1. Standards Enforcement (1 script)
+??? C2. Utility Functions (1 script)
+```
+? **MECE Compliant**: No script appears in multiple categories, all scripts covered
+
+#### Bad Non-MECE Example:
+```
+- Important Scripts (5 scripts)
+- PowerShell Scripts (12 scripts)  
+- Old Scripts (3 scripts)
+```
+? **MECE Violation**: Overlapping categories (PowerShell scripts includes important scripts)
+
+### Verification Requirements
+- **Before implementation**: Create MECE analysis for complex designs
+- **During code review**: Verify component boundaries don't overlap
+- **In documentation**: Use MECE structure for categorization
+- **For refactoring**: Apply MECE to identify consolidation opportunities
+
+### MECE Documentation Template
+```markdown
+## Problem Analysis: [Problem Name]
+
+### Categories (MECE):
+| Category | Items | Criteria | Action |
+|----------|-------|----------|--------|
+| A: [Name] | X items | [Clear criteria] | [Decision] |
+| B: [Name] | Y items | [Clear criteria] | [Decision] |
+| C: [Name] | Z items | [Clear criteria] | [Decision] |
+
+### Verification:
+- ? Mutually Exclusive: No item appears in multiple categories
+- ? Collectively Exhaustive: All items classified (Total: X+Y+Z)
+```
+
+---
+
 ## Implementation in the MINTutil Project
 
 ### Code Review Checkpoints
@@ -175,6 +241,7 @@ Every function must have documentation explaining:
 7. **Header**: Every script file has complete metadata block
 8. **Comments**: All complex logic has explanatory comments
 9. **TODOs**: All TODOs are concrete and traceable
+10. **MECE**: All analysis and categorization follows MECE principles
 
 ### Verification Tools
 - `scripts/check-neomint-compliance.ps1` - Automatic verification
