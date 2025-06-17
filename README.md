@@ -2,7 +2,7 @@
 
 # MINTutil
 
-### ? Modular Infrastructure and Network Tools
+### Modular Infrastructure and Network Tools
 
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -10,13 +10,13 @@
 [![NeoMINT](https://img.shields.io/badge/NeoMINT-compliant-brightgreen.svg)](docs/neomint-coding-practices.md)
 [![GitHub Issues](https://img.shields.io/github/issues/data-mint-research/MINTutil)](https://github.com/data-mint-research/MINTutil/issues)
 
-[Features](#-features) ? [Quick Start](#-quick-start) ? [Documentation](#-documentation) ? [Contributing](#-contributing)
+[Features](#key-features) ? [Quick Start](#quick-start) ? [Documentation](#documentation) ? [Contributing](#contributing)
 
 </div>
 
 ---
 
-## ? Quick Start
+## Quick Start
 
 **Install MINTutil in one line** - Open PowerShell as Administrator:
 
@@ -24,10 +24,10 @@
 irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex
 ```
 
-That's it! The installer handles everything automatically. ?
+That's it! The installer handles everything automatically.
 
 <details>
-<summary>? Prefer Chocolatey package manager?</summary>
+<summary>Alternative: Use Chocolatey package manager</summary>
 
 ```powershell
 irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/setup_windows.ps1 | iex -UseChocolatey
@@ -36,30 +36,30 @@ irm https://raw.githubusercontent.com/data-mint-research/MINTutil/main/scripts/s
 
 ---
 
-## ? What is MINTutil?
+## Overview
 
 MINTutil is a **modular platform** for utility and analysis tools with optional AI integration. Built with a modern **Streamlit UI**, it provides a unified interface for various tools while keeping your data local and secure.
 
-### ? Key Features
+### Key Features
 
-- ? **Modular Architecture** - Easy to extend with new tools
-- ? **AI Integration** - Optional Ollama support for local LLMs
-- ? **Web Interface** - Clean, modern Streamlit UI
-- ? **Privacy First** - All processing happens locally
-- ? **One-Click Install** - Automated setup for Windows
-- ? **Docker Ready** - Container deployment support
+- **Modular Architecture** - Easy to extend with new tools
+- **AI Integration** - Optional Ollama support for local LLMs
+- **Web Interface** - Clean, modern Streamlit UI
+- **Privacy First** - All processing happens locally
+- **One-Click Install** - Automated setup for Windows
+- **Docker Ready** - Container deployment support
 
 ---
 
-## ?? Available Tools
+## Available Tools
 
-### ?? Transcription Tool
+### Transcription Tool
 - Transcribe YouTube videos with OpenAI Whisper
 - Process local audio/video files
 - Automatic name correction with glossary
 - Export to Markdown format
 
-### ? More Tools Coming Soon
+### More Tools Coming Soon
 - Data analysis and visualization
 - Network utilities
 - API testing suite
@@ -67,7 +67,7 @@ MINTutil is a **modular platform** for utility and analysis tools with optional 
 
 ---
 
-## ? Requirements
+## System Requirements
 
 The installer automatically handles all dependencies:
 
@@ -79,7 +79,7 @@ The installer automatically handles all dependencies:
 
 ---
 
-## ? Getting Started
+## Getting Started
 
 ### After Installation
 
@@ -101,12 +101,12 @@ notepad C:\MINTutil\.env
 
 ---
 
-## ? Documentation
+## Documentation
 
 ### Installation Options
 
 <details>
-<summary>? Linux/macOS</summary>
+<summary>Linux/macOS Installation</summary>
 
 ```bash
 # Clone and setup
@@ -120,7 +120,7 @@ streamlit run streamlit_app/main.py
 </details>
 
 <details>
-<summary>? Docker</summary>
+<summary>Docker Installation</summary>
 
 ```bash
 # Using Docker Compose
@@ -131,7 +131,7 @@ docker-compose up -d
 </details>
 
 <details>
-<summary>??? Development Setup</summary>
+<summary>Development Setup</summary>
 
 ```bash
 # Clone repository
@@ -167,7 +167,7 @@ MINTutil/
 
 ---
 
-## ? Development
+## Development
 
 ### Adding a New Tool
 
@@ -199,10 +199,11 @@ This project follows [NeoMINT Coding Practices](docs/neomint-coding-practices.md
 - Central logging functions
 - Complete documentation
 - ASCII-only codebase
+- Professional documentation design
 
 ---
 
-## ? Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -255,7 +256,7 @@ Get-Content C:\MINTutil\logs\mintutil-cli.log -Tail 50
 
 ---
 
-## ? Contributing
+## Contributing
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md).
 
@@ -269,7 +270,7 @@ All contributions must comply with [NeoMINT Coding Practices](docs/neomint-codin
 
 ---
 
-## ? License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
@@ -277,18 +278,18 @@ Copyright ? 2025 MINT-RESEARCH
 
 ---
 
-## ? Support
+## Support
 
-- ? **Issues**: [GitHub Issues](https://github.com/data-mint-research/MINTutil/issues)
-- ? **Email**: mint-research@neomint.com
-- ? **Docs**: [Documentation](docs/)
+- **Issues**: [GitHub Issues](https://github.com/data-mint-research/MINTutil/issues)
+- **Email**: mint-research@neomint.com
+- **Documentation**: [Project Documentation](docs/)
 
 ---
 
 <div align="center">
 
-**Built with ?? by MINT-RESEARCH**
+**Built with precision by MINT-RESEARCH**
 
-? Star us on GitHub if you find this useful!
+Star us on GitHub if you find this useful!
 
 </div>
