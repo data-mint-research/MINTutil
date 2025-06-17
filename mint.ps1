@@ -185,7 +185,7 @@ function Invoke-MintCommand {
         }
         
         'init' {
-            $scriptPath = Join-Path $script:ScriptsPath "init_project.ps1"
+            $scriptPath = Join-Path $script:ScriptsPath "init-project-main.ps1"
             if (Test-Path $scriptPath) {
                 Write-Log "Starting initialization..." -Level INFO
                 & $scriptPath @Arguments
@@ -200,7 +200,7 @@ function Invoke-MintCommand {
         'start' {
             # Check if installation is complete
             if (-not (Test-Path "$script:MintUtilRoot\venv")) {
-                Write-Host "?  MINTutil is not installed yet!" -ForegroundColor Yellow
+                Write-Host "??  MINTutil is not installed yet!" -ForegroundColor Yellow
                 Write-Host "   Run 'mint install' first." -ForegroundColor DarkGray
                 $exitCode = 1
             } else {
@@ -225,7 +225,7 @@ function Invoke-MintCommand {
                 $processes | Stop-Process -Force
                 Write-Host "? MINTutil stopped." -ForegroundColor Green
             } else {
-                Write-Host "?  MINTutil is not running." -ForegroundColor DarkGray
+                Write-Host "??  MINTutil is not running." -ForegroundColor DarkGray
             }
             $exitCode = 0
         }
@@ -279,11 +279,11 @@ function Show-Help {
     Write-Host ""
     Write-Host "Available commands:" -ForegroundColor Green
     Write-Host "  install   ? One-click installation (recommended for new users)"
-    Write-Host "  start     ?  Start the MINTutil web interface"
-    Write-Host "  stop      ?  Stop MINTutil"
+    Write-Host "  start     ??  Start the MINTutil web interface"
+    Write-Host "  stop      ??  Stop MINTutil"
     Write-Host "  doctor    ? Run system diagnostics"
     Write-Host "  update    ? Update MINTutil components"
-    Write-Host "  init      ? Initialize project (for developers)"
+    Write-Host "  init      ?? Initialize project (for developers)"
     Write-Host "  help      ? Show this help"
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor Green
