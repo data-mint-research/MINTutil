@@ -4,20 +4,20 @@ Automatic transcription of audio and video files as well as YouTube videos with 
 
 ## Features
 
-- ? YouTube video transcription
-- ? Local audio/video file transcription  
-- ? Multi-language support (default: German)
-- ? Multiple output formats (TXT, SRT, VTT, JSON)
-- ? CLI and Streamlit UI
+- YouTube video transcription
+- Local audio/video file transcription  
+- Multi-language support (default: German)
+- Multiple output formats (TXT, SRT, VTT, JSON)
+- CLI and Streamlit UI
 
 ## Installation
 
-### 1. Basic Requirements
+### Basic Requirements
 ```bash
 pip install -r ../../requirements.txt
 ```
 
-### 2. Transcription Dependencies
+### Transcription Dependencies
 ```bash
 # Required for transcription:
 pip install openai-whisper yt-dlp
@@ -63,13 +63,13 @@ Start MINTutil and select the Transcription Tool from the sidebar.
 
 ## Whisper Models
 
-| Model  | Parameters | Relative Speed | Quality |
-|--------|------------|----------------|---------|
-| tiny   | 39M        | ~32x          | ??    |
-| base   | 74M        | ~16x          | ???   |
-| small  | 244M       | ~6x           | ????  |
-| medium | 769M       | ~2x           | ????? |
-| large  | 1550M      | 1x            | ????? |
+| Model  | Parameters | Relative Speed | Quality    |
+|--------|------------|----------------|------------|
+| tiny   | 39M        | ~32x          | Basic      |
+| base   | 74M        | ~16x          | Good       |
+| small  | 244M       | ~6x           | Better     |
+| medium | 769M       | ~2x           | Very Good  |
+| large  | 1550M      | 1x            | Excellent  |
 
 **Recommendation**: 
 - For fast transcriptions: `base`
