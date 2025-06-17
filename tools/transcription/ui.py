@@ -25,15 +25,15 @@ def import_module_from_path(module_name, file_path):
 
 def render():
     """Main UI render function for YouTube Transcription Tool"""
-    st.title("? YouTube Transcription")
+    st.title("YouTube Transcription")
     st.markdown("""
     Transcribes YouTube videos with OpenAI Whisper and corrects names/terms using a glossary.
     
     ### Features:
-    - ? Automatic video download
-    - ? Audio extraction and transcription
-    - ? Glossary-based correction
-    - ? Export as Markdown
+    - Automatic video download
+    - Audio extraction and transcription
+    - Glossary-based correction
+    - Export as Markdown
     """)
     
     # Initialize session state
@@ -66,11 +66,11 @@ def render():
         )
     
     # Process button
-    if st.button("? Start Transcription", type="primary", disabled=not youtube_url):
+    if st.button("Start Transcription", type="primary", disabled=not youtube_url):
         if validate_youtube_url(youtube_url):
             process_video(youtube_url, whisper_model)
         else:
-            st.error("? Invalid YouTube URL")
+            st.error("Invalid YouTube URL")
     
     # Status display
     if st.session_state.transcription_status:
@@ -81,11 +81,11 @@ def render():
         display_results()
     
     # Glossary management
-    with st.expander("? Manage Glossary"):
+    with st.expander("Manage Glossary"):
         manage_glossary()
     
     # Recent transcriptions
-    with st.expander("? Recent Transcriptions"):
+    with st.expander("Recent Transcriptions"):
         show_recent_transcriptions()
 
 def check_dependencies():
@@ -112,12 +112,12 @@ def check_dependencies():
         missing_deps.append("FFmpeg (System)")
     
     if missing_deps:
-        st.error("? Missing dependencies:")
+        st.error("Missing dependencies:")
         for dep in missing_deps:
             st.write(f"- {dep}")
-        st.info("? Install missing dependencies with: pip install -r requirements.txt")
+        st.info("Install missing dependencies with: pip install -r requirements.txt")
         if "FFmpeg" in str(missing_deps):
-            st.info("? Install FFmpeg: https://ffmpeg.org/download.html")
+            st.info("Install FFmpeg: https://ffmpeg.org/download.html")
         return False
     
     return True
@@ -146,7 +146,7 @@ def process_video(url, model):
             audio_path = download_audio(url)
             
             if not audio_path:
-                st.error("? Error during download")
+                st.error("Error during download")
                 st.session_state.transcription_status = None
                 return
             
@@ -155,7 +155,7 @@ def process_video(url, model):
             transcript_path = transcribe_audio(audio_path, model)
             
             if not transcript_path:
-                st.error("? Error during transcription")
+                st.error("Error during transcription")
                 st.session_state.transcription_status = None
                 return
             
@@ -174,10 +174,10 @@ def process_video(url, model):
             with open(markdown_path, 'r', encoding='utf-8') as f:
                 st.session_state.fixed_transcript = f.read()
             
-            update_status("complete", "? Transcription completed!")
+            update_status("complete", "Transcription completed!")
             
         except Exception as e:
-            st.error(f"? Error: {str(e)}")
+            st.error(f"Error: {str(e)}")
             st.session_state.transcription_status = None
             log_error(f"Process error: {str(e)}")
 
@@ -266,22 +266,22 @@ def display_status():
     status = st.session_state.transcription_status
     
     if isinstance(status, dict):
-        status_icons = {
-            "starting": "?",
-            "downloading": "?",
-            "transcribing": "?",
-            "fixing": "?",
-            "formatting": "?",
-            "complete": "?"
+        status_indicators = {
+            "starting": "Starting",
+            "downloading": "Downloading",
+            "transcribing": "Transcribing",
+            "fixing": "Processing",
+            "formatting": "Formatting",
+            "complete": "Complete"
         }
         
-        icon = status_icons.get(status["status"], "?")
-        st.info(f"{icon} {status['message']} ({status['timestamp']})")
+        indicator = status_indicators.get(status["status"], "Processing")
+        st.info(f"**Status**: {indicator} - {status['message']} ({status['timestamp']})")
 
 def display_results():
     """Display transcription results"""
     st.markdown("---")
-    st.subheader("? Results")
+    st.subheader("Results")
     
     tab1, tab2, tab3 = st.tabs(["Original", "Corrected", "Markdown"])
     
@@ -292,7 +292,7 @@ def display_results():
             height=400,
             key="original_transcript"
         )
-        if st.button("? Copy", key="copy_original"):
+        if st.button("Copy to Clipboard", key="copy_original"):
             st.code(st.session_state.current_transcript)
     
     with tab2:
@@ -315,7 +315,7 @@ def display_results():
             
             # Download button
             st.download_button(
-                label="? Download Markdown",
+                label="Download Markdown",
                 data=st.session_state.fixed_transcript,
                 file_name=f"transcript_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
                 mime="text/markdown"
@@ -335,7 +335,7 @@ def manage_glossary():
                 glossary = json.load(f)
         except json.JSONDecodeError:
             glossary = {}
-            st.warning("?? Glossary file is corrupted, creating new one...")
+            st.warning("**Warning**: Glossary file is corrupted, creating new one...")
     else:
         glossary = {}
     
@@ -349,7 +349,7 @@ def manage_glossary():
             with col2:
                 st.text(value)
             with col3:
-                if st.button("??", key=f"del_{key}"):
+                if st.button("Delete", key=f"del_{key}"):
                     del glossary[key]
                     save_glossary(glossary)
                     st.rerun()
@@ -362,10 +362,10 @@ def manage_glossary():
     with col2:
         new_value = st.text_input("Correct Spelling", key="new_value")
     with col3:
-        if st.button("? Add") and new_key and new_value:
+        if st.button("Add Entry") and new_key and new_value:
             glossary[new_key] = new_value
             save_glossary(glossary)
-            st.success("? Entry added")
+            st.success("Entry added successfully")
             st.rerun()
 
 def save_glossary(glossary):
@@ -396,7 +396,7 @@ def show_recent_transcriptions():
         with col1:
             st.text(file.name)
         with col2:
-            if st.button("? Open", key=f"open_{file.name}"):
+            if st.button("Open", key=f"open_{file.name}"):
                 with open(file, 'r', encoding='utf-8') as f:
                     st.session_state.fixed_transcript = f.read()
                 st.rerun()
